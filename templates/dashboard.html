@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - SkyLink Airlines</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">SkyLink Airlines</div>
+            <div class="nav-links">
+                <a href="/dashboard">Dashboard</a>
+                <a href="/profile">Profile</a>
+                <a href="#" id="logoutBtn">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- dash_board -->
+    <div class="container">
+        <div style="background: white; padding: 2rem; border-radius: 20px; margin: 3rem 0; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+            <h1 style="color: #667eea; margin-bottom: 0.5rem;">
+                Welcome, <span id="userName"></span>! ✈️
+            </h1>
+            <p style="color: #666; font-size: 1.1rem;">Manage your account and view your activity</p>
+        </div>
+        
+        <div class="dashboard-cards">
+            <!-- show user_info -->
+            <div class="card">
+                <h3>👤 User Information</h3>
+                <div id="userInfo">
+                    <p style="text-align: center; color: #999;">Loading...</p>
+                </div>
+            </div>
+            
+            <!-- show activity_log -->
+            <div class="card">
+                <h3>📊 Recent Activity</h3>
+                <div id="activityLogs">
+                    <p style="text-align: center; color: #999;">Loading...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 SkyLink Airlines. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/static/js/dashboard.js"></script>
+</body>
+</html>

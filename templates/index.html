@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SkyLink Airlines - User Management System</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">SkyLink Airlines</div>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/login">Login</a>
+                <a href="/register">Get Started</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="hero">
+        <div class="container">
+            <h1>Welcome to SkyLink Airlines</h1>
+            <p>User Management System - Module 2.1</p>
+            <p class="subtitle">Secure • Efficient • Reliable</p>
+            <div class="hero-buttons">
+                <a href="/register" class="btn btn-primary">Get Started</a>
+                <a href="/login" class="btn btn-secondary">Login</a>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="features">
+            <div class="feature-card">
+                <div class="feature-icon">🔐</div>
+                <h3>Secure Authentication</h3>
+                <p>JWT-based authentication with bcrypt password hashing ensures maximum security for all user accounts</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">👥</div>
+                <h3>Role Management</h3>
+                <p>Comprehensive role-based access control supporting Passenger, Staff, and Admin with different permissions</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">📊</div>
+                <h3>Activity Tracking</h3>
+                <p>Complete audit trail of all user activities with timestamps and detailed information logging</p>
+            </div>
+            <div class="feature-card">
+                <div class="feature-icon">👤</div>
+                <h3>Profile Management</h3>
+                <p>Easy-to-use interface for managing profile information, passwords, and account settings</p>
+            </div>
+        </div>
+    </div>
+
+    <!--information-->
+    <div class="info-section">
+        <div class="container">
+            <h2>About This System</h2>
+            <p>This comprehensive User Management module is built as part of the SkyLink Airlines Management System. 
+            It demonstrates modern web development practices using FastAPI, PostgreSQL, and responsive frontend design 
+            with an aviation-themed interface that reflects the professional nature of airline operations.</p>
+            
+            <div class="tech-stack">
+                <div class="tech-item">
+                    <strong>Backend</strong>
+                    FastAPI + Python
+                </div>
+                <div class="tech-item">
+                    <strong>Database</strong>
+                    PostgreSQL
+                </div>
+                <div class="tech-item">
+                    <strong>Frontend</strong>
+                    HTML5 + CSS3 + JavaScript
+                </div>
+                <div class="tech-item">
+                    <strong>Security</strong>
+                    JWT + Bcrypt
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 SkyLink Airlines. All rights reserved.</p>
+            <p style="margin-top: 0.5rem; font-size: 0.9rem;">Built with ❤️ using FastAPI & PostgreSQL</p>
+        </div>
+    </footer>
+</body>
+</html>

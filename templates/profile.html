@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Profile - SkyLink Airlines</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .photo-section {
+            text-align: center;
+            margin-bottom: 2rem;
+            padding: 2rem;
+            background: linear-gradient(135deg, #667eea15, #764ba215);
+            border-radius: 15px;
+        }
+        .photo-preview {
+            width: 150px;
+            height: 150px;
+            border-radius: 50%;
+            object-fit: cover;
+            border: 5px solid #667eea;
+            margin-bottom: 1rem;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .photo-buttons {
+            display: flex;
+            gap: 1rem;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        .btn-upload {
+            background: #667eea;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            font-weight: 600;
+        }
+        .btn-upload:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+        }
+        .btn-delete {
+            background: #dc3545;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 25px;
+            cursor: pointer;
+            transition: all 0.3s;
+            border: none;
+            font-weight: 600;
+        }
+        .btn-delete:hover {
+            background: #c82333;
+            transform: translateY(-2px);
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation Bar -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">SkyLink Airlines</div>
+            <div class="nav-links">
+                <a href="/dashboard">Dashboard</a>
+                <a href="/profile">Profile</a>
+                <a href="#" id="logoutBtn">Logout</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Profile Content -->
+    <div class="container">
+        <div style="background: white; padding: 2rem; border-radius: 20px; margin: 3rem 0; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+            <h1 style="color: #667eea;">
+                👤 My Profile
+            </h1>
+            <p style="color: #666; font-size: 1.1rem;">Update your personal information and profile photo</p>
+        </div>
+        
+        <div class="profile-container">
+            <div class="card">
+                <h3>Profile Photo</h3>
+                
+                <div class="photo-section">
+                    <div id="photoPreview" style="display: none;">
+                        <img id="currentPhoto" src="https://via.placeholder.com/150?text=No+Photo" alt="Profile Photo" class="photo-preview">
+                    </div>
+                    
+                    <div class="photo-buttons">
+                        <label for="photoInput" class="btn-upload">
+                            📷 Upload Photo
+                        </label>
+                        <input type="file" id="photoInput" accept="image/*" style="display: none;">
+                        
+                        <button id="deletePhotoBtn" class="btn-delete" style="display: none;">
+                            🗑️ Delete Photo
+                        </button>
+                    </div>
+                    
+                    <p style="margin-top: 1rem; color: #666; font-size: 0.9rem;">
+                        Maximum file size: 5MB<br>
+                        Supported formats: JPEG, PNG, WEBP
+                    </p>
+                </div>
+                
+                <h3>Update Profile Information</h3>
+                
+                <form id="profileForm">
+                    <div class="form-group">
+                        <label for="fullName">Full Name</label>
+                        <input 
+                            type="text" 
+                            id="fullName" 
+                            name="full_name"
+                            placeholder="Enter your full name"
+                        >
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="phone">Phone Number</label>
+                        <input 
+                            type="tel" 
+                            id="phone" 
+                            name="phone"
+                            placeholder="+880 1234 567890"
+                        >
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="password">New Password (leave blank to keep current)</label>
+                        <input 
+                            type="password" 
+                            id="password" 
+                            name="password"
+                            placeholder="Enter new password (optional)"
+                        >
+                    </div>
+                    
+                    <button type="submit" class="btn btn-primary btn-block">
+                        Update Profile
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 SkyLink Airlines. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script src="/static/js/profile.js"></script>
+</body>
+</html>

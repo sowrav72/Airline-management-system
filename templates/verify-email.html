@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Verify Email - SkyLink Airlines</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">SkyLink Airlines</div>
+            <div class="nav-links">
+                <a href="/">Home</a>
+                <a href="/login">Login</a>
+            </div>
+        </div>
+    </nav>
+
+    <!-- verification-->
+    <div class="container">
+        <div class="form-container">
+            <div id="verification-status">
+                <h2>📧 Verifying Email...</h2>
+                <p style="text-align: center; color: #666;">Please wait while we verify your email address.</p>
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 SkyLink Airlines. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+      
+        const urlParams = new URLSearchParams(window.location.search);
+        const token = urlParams.get('token');
+
+        if (!token) {
+            document.getElementById('verification-status').innerHTML = `
+                <h2>❌ Invalid Link</h2>
+                <p style="text-align: center; color: #dc3545;">No verification token found in the URL.</p>
+                <a href="/login" class="btn btn-primary btn-block" style="margin-top: 1rem;">Go to Login</a>
+            `;
+        } else {
+            // email verify
+            fetch(`/api/verify-email/${token}`)
+                .then(response => response.json())
+                .then(data => {
+                    if (data.message) {
+                        document.getElementById('verification-status').innerHTML = `
+                            <h2>✅ Email Verified!</h2>
+                            <p style="text-align: center; color: #28a745;">${data.message}</p>
+                            <a href="/login" class="btn btn-primary btn-block" style="margin-top: 1rem;">Go to Login</a>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('verification-status').innerHTML = `
+                        <h2>❌ Verification Failed</h2>
+                        <p style="text-align: center; color: #dc3545;">The verification link is invalid or has expired.</p>
+                        <a href="/register" class="btn btn-primary btn-block" style="margin-top: 1rem;">Register Again</a>
+                    `;
+                });
+        }
+    </script>
+</body>
+</html>
