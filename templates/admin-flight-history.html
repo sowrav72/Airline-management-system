@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight History - SkyLink Airlines Admin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .main-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        .content-header {
+            margin-bottom: 25px;
+        }
+        .content-header h2 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .search-box {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .search-box input {
+            flex: 1;
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        .search-box input:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .search-box button {
+            padding: 12px 30px;
+        }
+        .flight-cards {
+            display: grid;
+            gap: 20px;
+        }
+        .flight-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        .flight-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+        }
+        .flight-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+            margin-bottom: 20px;
+        }
+        .flight-number {
+            font-size: 24px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .current-status {
+            padding: 6px 15px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .status-scheduled { background: #e8f5e9; color: #2e7d32; }
+        .status-boarding { background: #fff3e0; color: #ef6c00; }
+        .status-departed { background: #e3f2fd; color: #1565c0; }
+        .status-delayed { background: #ffebee; color: #c62828; }
+        .status-cancelled { background: #f5f5f5; color: #757575; }
+        .flight-info {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        .info-item {
+            display: flex;
+            flex-direction: column;
+        }
+        .info-label {
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+        .info-value {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+        .history-section {
+            margin-top: 20px;
+            padding-top: 20px;
+            border-top: 2px solid #f0f0f0;
+        }
+        .history-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .timeline {
+            position: relative;
+            padding-left: 40px;
+        }
+        .timeline::before {
+            content: '';
+            position: absolute;
+            left: 15px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: #e0e0e0;
+        }
+        .timeline-item {
+            position: relative;
+            padding-bottom: 25px;
+        }
+        .timeline-item:last-child {
+            padding-bottom: 0;
+        }
+        .timeline-dot {
+            position: absolute;
+            left: -30px;
+            top: 5px;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: #667eea;
+            border: 3px solid white;
+            box-shadow: 0 0 0 2px #667eea;
+        }
+        .timeline-content {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+        }
+        .timeline-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .timeline-status {
+            font-weight: 600;
+            color: #667eea;
+        }
+        .timeline-date {
+            font-size: 12px;
+            color: #999;
+        }
+        .timeline-user {
+            font-size: 13px;
+            color: #666;
+            margin-top: 5px;
+        }
+        .timeline-reason {
+            background: #fff;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            border-left: 3px solid #ffc107;
+            font-size: 14px;
+            color: #666;
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        .no-history {
+            text-align: center;
+            padding: 30px;
+            color: #999;
+            font-style: italic;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        .stat-value {
+            font-size: 28px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .stat-label {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.9);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        .spinner {
+            border: 4px solid rgba(102, 126, 234, 0.2);
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .export-button {
+            margin-top: 20px;
+            display: flex;
+            justify-content: flex-end;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">✈️ SkyLink Airlines - Flight History</div>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="window.location.href='/admin/flights'">Flights</button>
+                <button class="btn btn-secondary" onclick="window.location.href='/admin/aircraft'">Aircraft</button>
+                <button class="btn btn-secondary" onclick="window.location.href='/dashboard'">Dashboard</button>
+                <button class="btn btn-primary" onclick="logout()">Logout</button>
+            </div>
+        </div>
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="content-header">
+                <h2>📜 Flight Status History</h2>
+                <p style="color: #666;">Track all status changes and updates for your flights</p>
+            </div>
+            <!-- Stats -->
+            <div class="stats-grid" id="statsGrid" style="display: none;">
+                <div class="stat-card">
+                    <div class="stat-value" id="totalChanges">0</div>
+                    <div class="stat-label">Total Changes</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="delaysCount">0</div>
+                    <div class="stat-label">Delays</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-value" id="cancellationsCount">0</div>
+                    <div class="stat-label">Cancellations</div>
+                </div>
+            </div>
+            <!-- Search Box -->
+            <div class="search-box">
+                <input type="text" id="searchFlight" placeholder="Search by flight number (e.g., SL101)">
+                <input type="date" id="startDate" placeholder="Start Date">
+                <input type="date" id="endDate" placeholder="End Date">
+                <button class="btn btn-primary" onclick="searchFlightHistory()">🔍 Search</button>
+                <button class="btn btn-secondary" onclick="clearSearch()">Clear</button>
+            </div>
+            <!-- Flight Cards -->
+            <div class="flight-cards" id="flightCards">
+                <div class="empty-state">
+                    <div class="empty-state-icon">🔍</div>
+                    <p>Enter a flight number to view its history</p>
+                </div>
+            </div>
+            <!-- Export Button -->
+            <div class="export-button" id="exportSection" style="display: none;">
+                <button class="btn btn-secondary" onclick="exportToCSV()">📥 Export to CSV</button>
+            </div>
+        </div>
+    </div>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+    <script>
+        const API_URL = 'http://127.0.0.1:8000/api';
+        let token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login';
+        }
+        let currentFlights = []; // To store current search results for export
+        async function searchFlightHistory() {
+            const searchTerm = document.getElementById('searchFlight').value.trim();
+            const startDate = document.getElementById('startDate').value;
+            const endDate = document.getElementById('endDate').value;
+           
+            if (!searchTerm) {
+                alert('Please enter a flight number');
+                return;
+            }
+            showLoading();
+            try {
+                // Search for flights matching the term
+                const response = await fetch(`${API_URL}/flights/all`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!response.ok) throw new Error('Failed to search flights');
+                const allFlights = await response.json();
+                let matchingFlights = allFlights.filter(f =>
+                    f.flight_number.toLowerCase().includes(searchTerm.toLowerCase())
+                );
+                // Filter by date range if provided
+                if (startDate || endDate) {
+                    matchingFlights = matchingFlights.filter(f => {
+                        const depDate = new Date(f.departure_datetime).toISOString().split('T')[0];
+                        if (startDate && depDate < startDate) return false;
+                        if (endDate && depDate > endDate) return false;
+                        return true;
+                    });
+                }
+                if (matchingFlights.length === 0) {
+                    document.getElementById('flightCards').innerHTML = `
+                        <div class="empty-state">
+                            <div class="empty-state-icon">❌</div>
+                            <p>No flights found matching "${searchTerm}"</p>
+                        </div>
+                    `;
+                    document.getElementById('statsGrid').style.display = 'none';
+                    document.getElementById('exportSection').style.display = 'none';
+                    return;
+                }
+                // For demo purposes, since we don't have status logs table yet,
+                // we'll create a simulated history
+                currentFlights = matchingFlights; // Store for export
+                displayFlightHistory(matchingFlights);
+                document.getElementById('exportSection').style.display = 'flex';
+            } catch (error) {
+                console.error('Error searching flights:', error);
+                alert('Error searching flights');
+            } finally {
+                hideLoading();
+            }
+        }
+        function displayFlightHistory(flights) {
+            const container = document.getElementById('flightCards');
+           
+            let totalChanges = 0;
+            let delays = 0;
+            let cancellations = 0;
+            container.innerHTML = flights.map(flight => {
+                const departure = new Date(flight.departure_datetime);
+                const arrival = new Date(flight.arrival_datetime);
+                // Simulated history (in real system, fetch from flight_status_logs table)
+                const history = generateSimulatedHistory(flight);
+                totalChanges += history.length;
+                history.forEach(h => {
+                    if (h.new_status === 'delayed') delays++;
+                    if (h.new_status === 'cancelled') cancellations++;
+                });
+                return `
+                    <div class="flight-card">
+                        <div class="flight-header">
+                            <div class="flight-number">${flight.flight_number}</div>
+                            <div class="current-status status-${flight.status}">${flight.status}</div>
+                        </div>
+                        <div class="flight-info">
+                            <div class="info-item">
+                                <div class="info-label">Route</div>
+                                <div class="info-value">Route #${flight.route_id}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Aircraft</div>
+                                <div class="info-value">Aircraft #${flight.aircraft_id}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Departure</div>
+                                <div class="info-value">${departure.toLocaleString()}</div>
+                            </div>
+                            <div class="info-item">
+                                <div class="info-label">Gate</div>
+                                <div class="info-value">${flight.gate || 'TBA'}</div>
+                            </div>
+                        </div>
+                        <div class="history-section">
+                            <div class="history-title">
+                                📋 Status Change History
+                            </div>
+                            ${history.length > 0 ? `
+                                <div class="timeline">
+                                    ${history.map(item => `
+                                        <div class="timeline-item">
+                                            <div class="timeline-dot"></div>
+                                            <div class="timeline-content">
+                                                <div class="timeline-header">
+                                                    <div class="timeline-status">
+                                                        ${item.old_status} → ${item.new_status}
+                                                    </div>
+                                                    <div class="timeline-date">${item.changed_at}</div>
+                                                </div>
+                                                <div class="timeline-user">Changed by: ${item.changed_by}</div>
+                                                ${item.reason ? `
+                                                    <div class="timeline-reason">
+                                                        <strong>Reason:</strong> ${item.reason}
+                                                    </div>
+                                                ` : ''}
+                                            </div>
+                                        </div>
+                                    `).join('')}
+                                </div>
+                            ` : `
+                                <div class="no-history">
+                                    No status changes recorded for this flight
+                                </div>
+                            `}
+                        </div>
+                    </div>
+                `;
+            }).join('');
+            // Update stats
+            document.getElementById('totalChanges').textContent = totalChanges;
+            document.getElementById('delaysCount').textContent = delays;
+            document.getElementById('cancellationsCount').textContent = cancellations;
+            document.getElementById('statsGrid').style.display = 'grid';
+        }
+        function generateSimulatedHistory(flight) {
+            // This simulates history - in real system, fetch from flight_status_logs table
+            const history = [];
+           
+            // Flight was created
+            history.push({
+                old_status: null,
+                new_status: 'scheduled',
+                changed_at: new Date(flight.created_at || Date.now()).toLocaleString(),
+                changed_by: 'Admin',
+                reason: null
+            });
+            // If status changed from scheduled, add history
+            if (flight.status !== 'scheduled') {
+                history.push({
+                    old_status: 'scheduled',
+                    new_status: flight.status,
+                    changed_at: new Date(flight.updated_at || Date.now()).toLocaleString(),
+                    changed_by: 'Flight Operations',
+                    reason: flight.status === 'delayed' ? 'Weather conditions' :
+                            flight.status === 'cancelled' ? 'Aircraft maintenance required' : null
+                });
+            }
+            return history.reverse(); // Show newest first
+        }
+        function clearSearch() {
+            document.getElementById('searchFlight').value = '';
+            document.getElementById('startDate').value = '';
+            document.getElementById('endDate').value = '';
+            document.getElementById('flightCards').innerHTML = `
+                <div class="empty-state">
+                    <div class="empty-state-icon">🔍</div>
+                    <p>Enter a flight number to view its history</p>
+                </div>
+            `;
+            document.getElementById('statsGrid').style.display = 'none';
+            document.getElementById('exportSection').style.display = 'none';
+            currentFlights = [];
+        }
+        function exportToCSV() {
+            if (currentFlights.length === 0) return;
+            
+            let csvContent = "Flight Number,Status,Route ID,Aircraft ID,Departure,Gate,History Changes\n";
+            
+            currentFlights.forEach(flight => {
+                const history = generateSimulatedHistory(flight);
+                const changes = history.map(h => `${h.old_status || 'Initial'} -> ${h.new_status} (${h.changed_at})`).join('; ');
+                csvContent += `"${flight.flight_number}","${flight.status}","${flight.route_id}","${flight.aircraft_id}","${new Date(flight.departure_datetime).toLocaleString()}","${flight.gate || 'TBA'}","${changes}"\n`;
+            });
+            
+            const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.href = url;
+            link.download = 'flight_history.csv';
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        }
+        // Allow search on Enter key
+        document.getElementById('searchFlight').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                searchFlightHistory();
+            }
+        });
+    </script>
+</body>
+</html>

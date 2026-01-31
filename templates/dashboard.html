@@ -7,37 +7,40 @@
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-
     <nav class="navbar">
         <div class="container">
             <div class="nav-brand">SkyLink Airlines</div>
-            <div class="nav-links">
+            <div class="nav-links" id="navLinks">
                 <a href="/dashboard">Dashboard</a>
+                <!-- Role-specific links will be added here by JavaScript -->
                 <a href="/profile">Profile</a>
                 <a href="#" id="logoutBtn">Logout</a>
             </div>
         </div>
     </nav>
 
-    <!-- dash_board -->
     <div class="container">
+        <!-- Welcome Banner -->
         <div style="background: white; padding: 2rem; border-radius: 20px; margin: 3rem 0; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
             <h1 style="color: #667eea; margin-bottom: 0.5rem;">
                 Welcome, <span id="userName"></span>! ✈️
             </h1>
-            <p style="color: #666; font-size: 1.1rem;">Manage your account and view your activity</p>
+            <p style="color: #666; font-size: 1.1rem;" id="userRoleText">Manage your account and view your activity</p>
         </div>
-        
+
+        <!-- Role-based Quick Actions -->
+        <div id="quickActions" style="margin-bottom: 3rem;"></div>
+
         <div class="dashboard-cards">
-            <!-- show user_info -->
+            <!-- User Information Card -->
             <div class="card">
                 <h3>👤 User Information</h3>
                 <div id="userInfo">
                     <p style="text-align: center; color: #999;">Loading...</p>
                 </div>
             </div>
-            
-            <!-- show activity_log -->
+
+            <!-- Recent Activity Card -->
             <div class="card">
                 <h3>📊 Recent Activity</h3>
                 <div id="activityLogs">
@@ -53,6 +56,291 @@
         </div>
     </footer>
 
-    <script src="/static/js/dashboard.js"></script>
+    <script>
+        // Check if user is logged in
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+            alert('⚠️ Please login first!');
+            window.location.href = '/login';
+        }
+
+        let currentUser = null;
+
+        // Load user profile
+        async function loadProfile() {
+            try {
+                const response = await fetch('/api/profile', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    currentUser = await response.json();
+                    
+                    // Display user name
+                    document.getElementById('userName').textContent = currentUser.full_name;
+                    
+                    // Update role-specific text
+                    updateRoleBasedUI(currentUser.role);
+                    
+                    // Format dates
+                    const createdDate = currentUser.created_at ? new Date(currentUser.created_at).toLocaleDateString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric'
+                    }) : 'N/A';
+                    
+                    const lastLoginDate = currentUser.last_login ? new Date(currentUser.last_login).toLocaleString('en-US', {
+                        year: 'numeric',
+                        month: 'long',
+                        day: 'numeric',
+                        hour: '2-digit',
+                        minute: '2-digit'
+                    }) : 'First time login';
+
+                    // Display user information
+                    const userInfo = `
+                        <div style="padding: 1rem 0;">
+                            ${currentUser.profile_photo ? `
+                                <div style="text-align: center; margin-bottom: 1.5rem;">
+                                    <img src="${currentUser.profile_photo}" alt="Profile Photo" 
+                                         style="width: 100px; height: 100px; border-radius: 50%; object-fit: cover; 
+                                                border: 3px solid #667eea; box-shadow: 0 4px 10px rgba(0,0,0,0.2);">
+                                </div>
+                            ` : ''}
+                            <p style="margin-bottom: 0.8rem;">
+                                <strong style="color: #667eea;">📧 Email:</strong> 
+                                <span style="color: #666;">${currentUser.email}</span>
+                            </p>
+                            <p style="margin-bottom: 0.8rem;">
+                                <strong style="color: #667eea;">👤 Role:</strong> 
+                                <span style="color: #666; text-transform: capitalize;">${currentUser.role}</span>
+                            </p>
+                            <p style="margin-bottom: 0.8rem;">
+                                <strong style="color: #667eea;">📱 Phone:</strong> 
+                                <span style="color: #666;">${currentUser.phone || 'Not provided'}</span>
+                            </p>
+                            <p style="margin-bottom: 0.8rem;">
+                                <strong style="color: #667eea;">✅ Verified:</strong> 
+                                <span style="color: ${currentUser.is_verified ? '#28a745' : '#dc3545'};">
+                                    ${currentUser.is_verified ? '✓ Yes' : '✗ No'}
+                                </span>
+                            </p>
+                            <p style="margin-bottom: 0.8rem;">
+                                <strong style="color: #667eea;">📅 Member Since:</strong> 
+                                <span style="color: #666;">${createdDate}</span>
+                            </p>
+                            <p style="margin-bottom: 0;">
+                                <strong style="color: #667eea;">🕒 Last Login:</strong> 
+                                <span style="color: #666;">${lastLoginDate}</span>
+                            </p>
+                        </div>
+                    `;
+                    
+                    document.getElementById('userInfo').innerHTML = userInfo;
+                } else if (response.status === 401) {
+                    alert('⚠️ Session expired. Please login again.');
+                    localStorage.removeItem('access_token');
+                    localStorage.removeItem('user');
+                    window.location.href = '/login';
+                } else {
+                    document.getElementById('userInfo').innerHTML = '<p style="color: #dc3545;">Error loading profile</p>';
+                }
+            } catch (error) {
+                console.error('Error loading profile:', error);
+                document.getElementById('userInfo').innerHTML = '<p style="color: #dc3545;">Error loading profile</p>';
+            }
+        }
+
+        // Update UI based on user role
+        function updateRoleBasedUI(role) {
+            const navLinks = document.getElementById('navLinks');
+            const roleText = document.getElementById('userRoleText');
+            const quickActions = document.getElementById('quickActions');
+            
+            // Find the position to insert role-specific links (before Profile)
+            const profileLink = navLinks.querySelector('a[href="/profile"]');
+            
+            if (role === 'passenger') {
+                // Passenger Navigation
+                roleText.textContent = '✈️ Search flights and manage your bookings';
+                
+                const flightsLink = document.createElement('a');
+                flightsLink.href = '/flights';
+                flightsLink.textContent = 'Search Flights';
+                navLinks.insertBefore(flightsLink, profileLink);
+                
+                // Passenger Quick Actions
+                quickActions.innerHTML = `
+                    <div style="background: white; padding: 2rem; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                        <h2 style="color: #333; margin-bottom: 1.5rem;">🚀 Quick Actions</h2>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                            <a href="/flights" style="text-decoration: none;">
+                                <div style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; 
+                                           padding: 1.5rem; border-radius: 10px; text-align: center; 
+                                           transition: transform 0.3s; cursor: pointer;"
+                                     onmouseover="this.style.transform='translateY(-5px)'" 
+                                     onmouseout="this.style.transform='translateY(0)'">
+                                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔍</div>
+                                    <div style="font-weight: 600;">Search Flights</div>
+                                </div>
+                            </a>
+                            <a href="/profile" style="text-decoration: none;">
+                                <div style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; 
+                                           padding: 1.5rem; border-radius: 10px; text-align: center; 
+                                           transition: transform 0.3s; cursor: pointer;"
+                                     onmouseover="this.style.transform='translateY(-5px)'" 
+                                     onmouseout="this.style.transform='translateY(0)'">
+                                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">👤</div>
+                                    <div style="font-weight: 600;">My Profile</div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                `;
+                
+            } else if (role === 'staff' || role === 'admin') {
+                // Staff/Admin Navigation
+                roleText.textContent = role === 'admin' ? 
+                    '👑 Admin Dashboard - Full System Control' : 
+                    '🧑‍✈️ Staff Dashboard - Manage Operations';
+                
+                const aircraftLink = document.createElement('a');
+                aircraftLink.href = '/admin/aircraft';
+                aircraftLink.textContent = 'Aircraft';
+                navLinks.insertBefore(aircraftLink, profileLink);
+                
+                const flightsLink = document.createElement('a');
+                flightsLink.href = '/admin/flights';
+                flightsLink.textContent = 'Flights';
+                navLinks.insertBefore(flightsLink, profileLink);
+                
+                // Staff/Admin Quick Actions
+                quickActions.innerHTML = `
+                    <div style="background: white; padding: 2rem; border-radius: 15px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                        <h2 style="color: #333; margin-bottom: 1.5rem;">🚀 Quick Actions</h2>
+                        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1rem;">
+                            <a href="/admin/aircraft" style="text-decoration: none;">
+                                <div style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; 
+                                           padding: 1.5rem; border-radius: 10px; text-align: center; 
+                                           transition: transform 0.3s; cursor: pointer;"
+                                     onmouseover="this.style.transform='translateY(-5px)'" 
+                                     onmouseout="this.style.transform='translateY(0)'">
+                                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">✈️</div>
+                                    <div style="font-weight: 600;">Manage Aircraft</div>
+                                </div>
+                            </a>
+                            <a href="/admin/flights" style="text-decoration: none;">
+                                <div style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; 
+                                           padding: 1.5rem; border-radius: 10px; text-align: center; 
+                                           transition: transform 0.3s; cursor: pointer;"
+                                     onmouseover="this.style.transform='translateY(-5px)'" 
+                                     onmouseout="this.style.transform='translateY(0)'">
+                                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">🛫</div>
+                                    <div style="font-weight: 600;">Manage Flights</div>
+                                </div>
+                            </a>
+                            <a href="/flights" style="text-decoration: none;">
+                                <div style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; 
+                                           padding: 1.5rem; border-radius: 10px; text-align: center; 
+                                           transition: transform 0.3s; cursor: pointer;"
+                                     onmouseover="this.style.transform='translateY(-5px)'" 
+                                     onmouseout="this.style.transform='translateY(0)'">
+                                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">🔍</div>
+                                    <div style="font-weight: 600;">Search Flights</div>
+                                </div>
+                            </a>
+                            <a href="/profile" style="text-decoration: none;">
+                                <div style="background: linear-gradient(135deg, #667eea, #764ba2); color: white; 
+                                           padding: 1.5rem; border-radius: 10px; text-align: center; 
+                                           transition: transform 0.3s; cursor: pointer;"
+                                     onmouseover="this.style.transform='translateY(-5px)'" 
+                                     onmouseout="this.style.transform='translateY(0)'">
+                                    <div style="font-size: 2rem; margin-bottom: 0.5rem;">👤</div>
+                                    <div style="font-weight: 600;">My Profile</div>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        // Load activity logs
+        async function loadActivityLogs() {
+            try {
+                const response = await fetch('/api/activity-logs', {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+
+                if (response.ok) {
+                    const logs = await response.json();
+                    
+                    if (logs.length === 0) {
+                        document.getElementById('activityLogs').innerHTML = 
+                            '<p style="text-align: center; color: #999;">No recent activity</p>';
+                        return;
+                    }
+
+                    const logsHtml = logs.map(log => {
+                        const timestamp = new Date(log.timestamp).toLocaleString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric',
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+                        
+                        return `
+                            <div class="activity-item">
+                                <strong>${log.action}</strong>
+                                <p>${log.details || 'No details available'}</p>
+                                <small>🕒 ${timestamp} | 📍 ${log.ip_address || 'Unknown'}</small>
+                            </div>
+                        `;
+                    }).join('');
+                    
+                    document.getElementById('activityLogs').innerHTML = logsHtml;
+                } else {
+                    document.getElementById('activityLogs').innerHTML = 
+                        '<p style="color: #dc3545;">Error loading activity logs</p>';
+                }
+            } catch (error) {
+                console.error('Error loading activity logs:', error);
+                document.getElementById('activityLogs').innerHTML = 
+                    '<p style="color: #dc3545;">Error loading activity logs</p>';
+            }
+        }
+
+        // Logout functionality
+        document.getElementById('logoutBtn').addEventListener('click', async (e) => {
+            e.preventDefault();
+            
+            if (confirm('Are you sure you want to logout?')) {
+                try {
+                    await fetch('/api/logout', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+                } catch (error) {
+                    console.error('Logout error:', error);
+                }
+                
+                localStorage.removeItem('access_token');
+                localStorage.removeItem('user');
+                alert('✅ Logged out successfully!');
+                window.location.href = '/';
+            }
+        });
+
+        // Load data on page load
+        loadProfile();
+        loadActivityLogs();
+    </script>
 </body>
 </html>

@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Management - SkyLink Airlines Admin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+        }
+
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+        }
+
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+
+        .main-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+
+        .content-header h2 {
+            color: #333;
+            font-size: 24px;
+        }
+
+        .flights-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        .flights-table th,
+        .flights-table td {
+            padding: 15px;
+            text-align: left;
+            border-bottom: 1px solid #e0e0e0;
+        }
+
+        .flights-table th {
+            background: #f8f9fa;
+            color: #666;
+            font-weight: 600;
+            font-size: 13px;
+            text-transform: uppercase;
+        }
+
+        .flights-table tr:hover {
+            background: #f8f9ff;
+        }
+
+        .status-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .status-scheduled { background: #e8f5e9; color: #2e7d32; }
+        .status-boarding { background: #fff3e0; color: #ef6c00; }
+        .status-departed { background: #e3f2fd; color: #1565c0; }
+        .status-delayed { background: #ffebee; color: #c62828; }
+        .status-cancelled { background: #f5f5f5; color: #757575; }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 50px auto;
+            padding: 0;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 600px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .modal-header {
+            padding: 25px 30px;
+            border-bottom: 2px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .modal-header h3 {
+            color: #333;
+            font-size: 22px;
+        }
+
+        .close {
+            color: #aaa;
+            font-size: 32px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+
+        .close:hover {
+            color: #000;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 20px;
+        }
+
+        .form-group label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+
+        .modal-footer {
+            padding: 20px 30px;
+            border-top: 2px solid #f0f0f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.9);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .spinner {
+            border: 4px solid rgba(102, 126, 234, 0.2);
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .flight-info-box {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+        }
+
+        .flight-info-box h4 {
+            color: #667eea;
+            margin-bottom: 10px;
+        }
+
+        .flight-info-box p {
+            color: #666;
+            font-size: 14px;
+            margin: 5px 0;
+        }
+
+        .reason-box {
+            background: #fff3e0;
+            border-left: 4px solid #ef6c00;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+
+        .reason-box label {
+            color: #ef6c00 !important;
+            font-weight: bold !important;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">✈️ SkyLink Airlines - Admin</div>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="window.location.href='/admin/aircraft'">Aircraft</button>
+                <button class="btn btn-secondary" onclick="window.location.href='/admin/costs'">Costs</button>
+                <button class="btn btn-secondary" onclick="window.location.href='/admin/templates'">Templates</button>
+                <button class="btn btn-secondary" onclick="window.location.href='/dashboard'">Dashboard</button>
+                <button class="btn btn-primary" onclick="logout()">Logout</button>
+            </div>
+        </div>
+
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="content-header">
+                <h2>✈️ Flight Management</h2>
+                <button class="btn btn-success" onclick="openCreateModal()">+ Add New Flight</button>
+            </div>
+
+            <table class="flights-table">
+                <thead>
+                    <tr>
+                        <th>Flight No.</th>
+                        <th>Route</th>
+                        <th>Departure</th>
+                        <th>Arrival</th>
+                        <th>Aircraft</th>
+                        <th>Status</th>
+                        <th>Gate</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="flightsTableBody">
+                    <tr>
+                        <td colspan="8" class="empty-state">
+                            <div class="empty-state-icon">⏳</div>
+                            <p>Loading flights...</p>
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- Edit Flight Modal -->
+    <div id="editModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Edit Flight</h3>
+                <span class="close" onclick="closeEditModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div class="flight-info-box" id="flightInfoBox">
+                    <h4>Flight Information</h4>
+                    <p id="flightInfoText"></p>
+                </div>
+
+                <form id="editForm">
+                    <div class="form-group">
+                        <label>Status *</label>
+                        <select id="edit_status" required onchange="toggleReasonBox()">
+                            <option value="scheduled">Scheduled</option>
+                            <option value="boarding">Boarding</option>
+                            <option value="departed">Departed</option>
+                            <option value="delayed">Delayed</option>
+                            <option value="cancelled">Cancelled</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Gate</label>
+                        <input type="text" id="edit_gate" placeholder="e.g., A12">
+                    </div>
+
+                    <div class="reason-box" id="reasonBox" style="display: none;">
+                        <div class="form-group" style="margin-bottom: 0;">
+                            <label>Reason for Delay/Cancellation *</label>
+                            <textarea id="edit_reason" rows="4" placeholder="Please provide a detailed reason..."></textarea>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeEditModal()">Cancel</button>
+                <button class="btn btn-success" onclick="saveFlightEdit()">Save Changes</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Create Flight Modal -->
+    <div id="createModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>Add New Flight</h3>
+                <span class="close" onclick="closeCreateModal()">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="createForm">
+                    <div class="form-group">
+                        <label>Flight Number *</label>
+                        <input type="text" id="flight_number" required placeholder="e.g., SL101">
+                    </div>
+                    <div class="form-group">
+                        <label>Route *</label>
+                        <select id="route_id" required>
+                            <option value="">Select Route</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Aircraft *</label>
+                        <select id="aircraft_id" required>
+                            <option value="">Select Aircraft</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label>Gate</label>
+                        <input type="text" id="gate" placeholder="e.g., A12">
+                    </div>
+                    <div class="form-group">
+                        <label>Departure Date & Time *</label>
+                        <input type="datetime-local" id="departure_datetime" required>
+                    </div>
+                    <div class="form-group">
+                        <label>Arrival Date & Time *</label>
+                        <input type="datetime-local" id="arrival_datetime" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeCreateModal()">Cancel</button>
+                <button class="btn btn-success" onclick="saveFlight()">Create Flight</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+    </div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:8000/api';
+       let token = localStorage.getItem('access_token');
+        let editingFlightId = null;
+
+        if (!token) {
+            window.location.href = '/login';
+        }
+
+        async function loadData() {
+            await Promise.all([
+                loadFlights(),
+                loadRoutes(),
+                loadAircraft()
+            ]);
+        }
+
+        async function loadFlights() {
+            try {
+                const response = await fetch(`${API_URL}/flights/all`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to load flights');
+
+                const flights = await response.json();
+                displayFlights(flights);
+            } catch (error) {
+                console.error('Error loading flights:', error);
+                document.getElementById('flightsTableBody').innerHTML = `
+                    <tr><td colspan="8" class="empty-state">
+                        <div class="empty-state-icon">❌</div>
+                        <p>Error loading flights</p>
+                    </td></tr>
+                `;
+            }
+        }
+
+        function displayFlights(flights) {
+            const tbody = document.getElementById('flightsTableBody');
+
+            if (flights.length === 0) {
+                tbody.innerHTML = `
+                    <tr><td colspan="8" class="empty-state">
+                        <div class="empty-state-icon">✈️</div>
+                        <p>No flights found. Click "Add New Flight" to create one.</p>
+                    </td></tr>
+                `;
+                return;
+            }
+
+            tbody.innerHTML = flights.map(flight => {
+                const departure = new Date(flight.departure_datetime);
+                const arrival = new Date(flight.arrival_datetime);
+
+                return `
+                    <tr>
+                        <td><strong>${flight.flight_number}</strong></td>
+                        <td>Route #${flight.route_id}</td>
+                        <td>${departure.toLocaleString()}</td>
+                        <td>${arrival.toLocaleString()}</td>
+                        <td>Aircraft #${flight.aircraft_id}</td>
+                        <td><span class="status-badge status-${flight.status}">${flight.status}</span></td>
+                        <td>${flight.gate || 'TBA'}</td>
+                        <td>
+                            <button class="btn btn-warning btn-small" onclick="openEditModal(${flight.id})">Edit</button>
+                            <button class="btn btn-danger btn-small" onclick="deleteFlight(${flight.id})">Cancel</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        async function loadRoutes() {
+            try {
+                const response = await fetch(`${API_URL}/flights/routes`);
+                const routes = await response.json();
+
+                const select = document.getElementById('route_id');
+                select.innerHTML = '<option value="">Select Route</option>' + 
+                    routes.map(route => 
+                        `<option value="${route.id}">Route #${route.id}</option>`
+                    ).join('');
+            } catch (error) {
+                console.error('Error loading routes:', error);
+            }
+        }
+
+        async function loadAircraft() {
+            try {
+                const response = await fetch(`${API_URL}/flights/aircraft`);
+                const aircraft = await response.json();
+
+                const select = document.getElementById('aircraft_id');
+                select.innerHTML = '<option value="">Select Aircraft</option>' + 
+                    aircraft.filter(a => a.status === 'active').map(a => 
+                        `<option value="${a.id}">${a.aircraft_number} - ${a.model}</option>`
+                    ).join('');
+            } catch (error) {
+                console.error('Error loading aircraft:', error);
+            }
+        }
+
+        function openCreateModal() {
+            document.getElementById('createForm').reset();
+            document.getElementById('createModal').style.display = 'block';
+        }
+
+        function closeCreateModal() {
+            document.getElementById('createModal').style.display = 'none';
+        }
+
+        async function saveFlight() {
+            const form = document.getElementById('createForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const flightData = {
+                flight_number: document.getElementById('flight_number').value,
+                route_id: parseInt(document.getElementById('route_id').value),
+                aircraft_id: parseInt(document.getElementById('aircraft_id').value),
+                departure_datetime: document.getElementById('departure_datetime').value,
+                arrival_datetime: document.getElementById('arrival_datetime').value,
+                gate: document.getElementById('gate').value || null
+            };
+
+            try {
+                showLoading();
+                const response = await fetch(`${API_URL}/flights/create`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(flightData)
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to create flight');
+                }
+
+                alert('Flight created successfully!');
+                closeCreateModal();
+                loadFlights();
+            } catch (error) {
+                console.error('Error saving flight:', error);
+                alert(`Error: ${error.message}`);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        async function openEditModal(flightId) {
+            try {
+                const response = await fetch(`${API_URL}/flights/${flightId}`);
+                const flight = await response.json();
+
+                editingFlightId = flightId;
+
+                const departure = new Date(flight.departure_datetime);
+                const arrival = new Date(flight.arrival_datetime);
+
+                document.getElementById('flightInfoText').innerHTML = `
+                    <strong>${flight.flight_number}</strong><br>
+                    ${flight.origin.city} (${flight.origin.code}) → ${flight.destination.city} (${flight.destination.code})<br>
+                    ${departure.toLocaleString()} - ${arrival.toLocaleString()}
+                `;
+
+                document.getElementById('edit_status').value = flight.status;
+                document.getElementById('edit_gate').value = flight.gate || '';
+                document.getElementById('edit_reason').value = '';
+
+                toggleReasonBox();
+                document.getElementById('editModal').style.display = 'block';
+            } catch (error) {
+                console.error('Error loading flight:', error);
+                alert('Error loading flight details');
+            }
+        }
+
+        function toggleReasonBox() {
+            const status = document.getElementById('edit_status').value;
+            const reasonBox = document.getElementById('reasonBox');
+            const reasonField = document.getElementById('edit_reason');
+
+            if (status === 'delayed' || status === 'cancelled') {
+                reasonBox.style.display = 'block';
+                reasonField.required = true;
+            } else {
+                reasonBox.style.display = 'none';
+                reasonField.required = false;
+            }
+        }
+
+        async function saveFlightEdit() {
+            const status = document.getElementById('edit_status').value;
+            const gate = document.getElementById('edit_gate').value;
+            const reason = document.getElementById('edit_reason').value;
+
+            if ((status === 'delayed' || status === 'cancelled') && !reason.trim()) {
+                alert('Please provide a reason for delay/cancellation');
+                return;
+            }
+
+            try {
+                showLoading();
+                const response = await fetch(`${API_URL}/flights/${editingFlightId}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify({
+                        status: status,
+                        gate: gate || null
+                    })
+                });
+
+                if (!response.ok) throw new Error('Failed to update flight');
+
+                alert('Flight updated successfully!');
+                closeEditModal();
+                loadFlights();
+            } catch (error) {
+                console.error('Error updating flight:', error);
+                alert('Error updating flight');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function closeEditModal() {
+            document.getElementById('editModal').style.display = 'none';
+        }
+
+        async function deleteFlight(id) {
+            if (!confirm('Are you sure you want to cancel this flight?')) return;
+
+            try {
+                showLoading();
+                const response = await fetch(`${API_URL}/flights/${id}`, {
+                    method: 'DELETE',
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+
+                if (!response.ok) throw new Error('Failed to cancel flight');
+
+                alert('Flight cancelled successfully!');
+                loadFlights();
+            } catch (error) {
+                console.error('Error cancelling flight:', error);
+                alert('Error cancelling flight');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        }
+
+        window.onclick = function(event) {
+            const editModal = document.getElementById('editModal');
+            const createModal = document.getElementById('createModal');
+            if (event.target == editModal) closeEditModal();
+            if (event.target == createModal) closeCreateModal();
+        }
+
+        loadData();
+    </script>
+</body>
+</html>

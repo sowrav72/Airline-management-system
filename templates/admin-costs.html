@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cost Management - SkyLink Airlines Admin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .main-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        .content-header {
+            margin-bottom: 25px;
+        }
+        .content-header h2 {
+            color: #333;
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        .search-box {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+        .search-box input,
+        .search-box select {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            min-width: 200px;
+        }
+        .search-box input:focus,
+        .search-box select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .flights-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 20px;
+        }
+        .flight-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        .flight-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+            transform: translateY(-3px);
+        }
+        .flight-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+        .flight-number {
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .has-costs {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .has-costs.yes {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .has-costs.no {
+            background: #ffebee;
+            color: #c62828;
+        }
+        .flight-info {
+            margin-bottom: 15px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f5f5f5;
+        }
+        .info-label {
+            color: #666;
+            font-size: 13px;
+        }
+        .info-value {
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .cost-summary {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 15px;
+        }
+        .cost-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 16px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        .modal-content {
+            background-color: white;
+            margin: 30px auto;
+            padding: 0;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        .modal-header {
+            padding: 25px 30px;
+            border-bottom: 2px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h3 {
+            color: #333;
+            font-size: 22px;
+        }
+        .close {
+            color: #aaa;
+            font-size: 32px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+        .close:hover {
+            color: #000;
+        }
+        .modal-body {
+            padding: 30px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        .form-group input,
+        .form-group textarea {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        .form-group input:focus,
+        .form-group textarea:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .cost-item {
+            background: #f8f9fa;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        .cost-item-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 10px;
+        }
+        .cost-item-label {
+            font-weight: 600;
+            color: #333;
+        }
+        .cost-item-value {
+            font-size: 18px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .total-cost-box {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            margin-top: 20px;
+        }
+        .total-cost-label {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-bottom: 10px;
+        }
+        .total-cost-value {
+            font-size: 36px;
+            font-weight: bold;
+        }
+        .modal-footer {
+            padding: 20px 30px;
+            border-top: 2px solid #f0f0f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.9);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        .spinner {
+            border: 4px solid rgba(102, 126, 234, 0.2);
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">✈️ SkyLink Airlines - Cost Management</div>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="window.location.href='/admin/flights'">Flights</button>
+                <button class="btn btn-secondary" onclick="window.location.href='/admin/aircraft'">Aircraft</button>
+                <button class="btn btn-secondary" onclick="window.location.href='/dashboard'">Dashboard</button>
+                <button class="btn btn-primary" onclick="logout()">Logout</button>
+            </div>
+        </div>
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="content-header">
+                <h2>💰 Flight Operational Cost Management</h2>
+                <p style="color: #666; margin-top: 10px;">Track and manage operational costs for each flight</p>
+            </div>
+            <!-- Search Box -->
+            <div class="search-box">
+                <input type="text" id="searchFlight" placeholder="Search by flight number..." onkeyup="debounceFilter()">
+                <select id="filterStatus" onchange="filterFlights()">
+                    <option value="">All Statuses</option>
+                    <option value="scheduled">Scheduled</option>
+                    <option value="departed">Departed</option>
+                    <option value="cancelled">Cancelled</option>
+                </select>
+                <select id="filterCost" onchange="filterFlights()">
+                    <option value="">All Flights</option>
+                    <option value="with">With Costs</option>
+                    <option value="without">Without Costs</option>
+                </select>
+            </div>
+            <!-- Flights Grid -->
+            <div class="flights-grid" id="flightsGrid">
+                <div class="empty-state">
+                    <div class="empty-state-icon">⏳</div>
+                    <p>Loading flights...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Cost Management Modal -->
+    <div id="costModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Manage Flight Costs</h3>
+                <span class="close" onclick="closeModal()" aria-label="Close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <div id="flightDetails" style="margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px;">
+                    <h4 style="color: #667eea; margin-bottom: 10px;">Flight Details</h4>
+                    <p id="flightInfo" style="color: #666;"></p>
+                </div>
+                <form id="costForm">
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="fuel_cost">Fuel Cost (৳) *</label>
+                            <input type="number" id="fuel_cost" step="0.01" min="0" required placeholder="0.00" oninput="calculateTotal()">
+                        </div>
+                        <div class="form-group">
+                            <label for="crew_cost">Crew Cost (৳) *</label>
+                            <input type="number" id="crew_cost" step="0.01" min="0" required placeholder="0.00" oninput="calculateTotal()">
+                        </div>
+                        <div class="form-group">
+                            <label for="airport_charges">Airport Charges (৳) *</label>
+                            <input type="number" id="airport_charges" step="0.01" min="0" required placeholder="0.00" oninput="calculateTotal()">
+                        </div>
+                        <div class="form-group">
+                            <label for="catering_cost">Catering Cost (৳) *</label>
+                            <input type="number" id="catering_cost" step="0.01" min="0" required placeholder="0.00" oninput="calculateTotal()">
+                        </div>
+                        <div class="form-group">
+                            <label for="maintenance_cost">Maintenance Cost (৳) *</label>
+                            <input type="number" id="maintenance_cost" step="0.01" min="0" required placeholder="0.00" oninput="calculateTotal()">
+                        </div>
+                        <div class="form-group">
+                            <label for="other_costs">Other Costs (৳)</label>
+                            <input type="number" id="other_costs" step="0.01" min="0" placeholder="0.00" oninput="calculateTotal()">
+                        </div>
+                    </div>
+                    <div class="form-group" style="margin-top: 15px;">
+                        <label for="notes">Notes (Optional)</label>
+                        <textarea id="notes" rows="3" placeholder="Additional notes about these costs..."></textarea>
+                    </div>
+                    <div class="total-cost-box">
+                        <div class="total-cost-label">TOTAL OPERATIONAL COST</div>
+                        <div class="total-cost-value" id="totalCostDisplay">৳0.00</div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-success" onclick="saveCosts()">Save Costs</button>
+            </div>
+        </div>
+    </div>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay" aria-label="Loading">
+        <div class="spinner" role="progressbar"></div>
+    </div>
+    <script>
+        const API_URL = 'http://127.0.0.1:8000/api';
+        let token = localStorage.getItem('token');
+        let allFlights = [];
+        let currentFlightId = null;
+        let debounceTimer;
+
+        if (!token) {
+            window.location.href = '/login';
+        }
+
+        // Load all flights with cost info
+        async function loadFlights() {
+            showLoading();
+            try {
+                const response = await fetch(`${API_URL}/flights/all`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.status === 401) {
+                    logout(); // Token invalid/expired
+                    return;
+                }
+                if (!response.ok) throw new Error('Failed to load flights');
+                const flights = await response.json();
+
+                // Fetch costs in parallel
+                const costPromises = flights.map(flight =>
+                    fetch(`${API_URL}/flights/costs/${flight.id}`, {
+                        headers: { 'Authorization': `Bearer ${token}` }
+                    })
+                    .then(res => {
+                        if (res.status === 401) throw new Error('Unauthorized');
+                        if (!res.ok) throw new Error('Failed to load costs');
+                        return res.json();
+                    })
+                    .catch(() => null) // Silent fail per flight
+                );
+                const costs = await Promise.all(costPromises);
+                flights.forEach((flight, index) => {
+                    flight.costs = costs[index];
+                });
+
+                allFlights = flights;
+                displayFlights(flights);
+            } catch (error) {
+                console.error('Error loading flights:', error);
+                document.getElementById('flightsGrid').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">❌</div>
+                        <p>Error loading flights: ${error.message}</p>
+                    </div>
+                `;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Display flights in grid
+        function displayFlights(flights) {
+            const grid = document.getElementById('flightsGrid');
+            if (flights.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">✈️</div>
+                        <p>No flights found</p>
+                    </div>
+                `;
+                return;
+            }
+            grid.innerHTML = flights.map(flight => {
+                const hasCosts = flight.costs && flight.costs.total_cost > 0;
+                const totalCost = hasCosts ? flight.costs.total_cost : 0;
+                const departure = new Date(flight.departure_datetime);
+                return `
+                    <div class="flight-card" onclick="openCostModal(${flight.id})">
+                        <div class="flight-header">
+                            <div class="flight-number">${flight.flight_number}</div>
+                            <div class="has-costs ${hasCosts ? 'yes' : 'no'}">
+                                ${hasCosts ? 'Has Costs' : 'No Costs'}
+                            </div>
+                        </div>
+                        <div class="flight-info">
+                            <div class="info-row">
+                                <span class="info-label">Date</span>
+                                <span class="info-value">${departure.toLocaleDateString()}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Status</span>
+                                <span class="info-value">${flight.status}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Route</span>
+                                <span class="info-value">Route #${flight.route_id}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Aircraft</span>
+                                <span class="info-value">Aircraft #${flight.aircraft_id}</span>
+                            </div>
+                        </div>
+                        ${hasCosts ? `
+                            <div class="cost-summary">
+                                <div class="cost-total">
+                                    <span>Total Cost:</span>
+                                    <span>৳${totalCost.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
+                                </div>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Filter flights based on inputs
+        function filterFlights() {
+            const searchText = document.getElementById('searchFlight').value.toLowerCase();
+            const statusFilter = document.getElementById('filterStatus').value;
+            const costFilter = document.getElementById('filterCost').value;
+            const filtered = allFlights.filter(flight => {
+                const matchesSearch = flight.flight_number.toLowerCase().includes(searchText);
+                const matchesStatus = !statusFilter || flight.status === statusFilter;
+                let matchesCost = true;
+                if (costFilter === 'with') {
+                    matchesCost = flight.costs && flight.costs.total_cost > 0;
+                } else if (costFilter === 'without') {
+                    matchesCost = !flight.costs || flight.costs.total_cost === 0;
+                }
+                return matchesSearch && matchesStatus && matchesCost;
+            });
+            displayFlights(filtered);
+        }
+
+        // Debounce for search input
+        function debounceFilter() {
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(filterFlights, 300);
+        }
+
+        // Open modal for cost editing
+        async function openCostModal(flightId) {
+            currentFlightId = flightId;
+            const flight = allFlights.find(f => f.id === flightId);
+            if (!flight) return;
+            const departure = new Date(flight.departure_datetime);
+            const arrival = new Date(flight.arrival_datetime);
+            document.getElementById('flightInfo').innerHTML = `
+                <strong>${flight.flight_number}</strong> |
+                ${departure.toLocaleString()} → ${arrival.toLocaleString()} |
+                Status: ${flight.status}
+            `;
+            // Load existing costs if available
+            if (flight.costs && flight.costs.id) {
+                document.getElementById('fuel_cost').value = flight.costs.fuel_cost || 0;
+                document.getElementById('crew_cost').value = flight.costs.crew_cost || 0;
+                document.getElementById('airport_charges').value = flight.costs.airport_charges || 0;
+                document.getElementById('catering_cost').value = flight.costs.catering_cost || 0;
+                document.getElementById('maintenance_cost').value = flight.costs.maintenance_cost || 0;
+                document.getElementById('other_costs').value = flight.costs.other_costs || 0;
+                document.getElementById('notes').value = flight.costs.notes || '';
+            } else {
+                document.getElementById('costForm').reset();
+            }
+            calculateTotal();
+            document.getElementById('costModal').style.display = 'block';
+        }
+
+        // Calculate total cost live
+        function calculateTotal() {
+            const fuel = parseFloat(document.getElementById('fuel_cost').value) || 0;
+            const crew = parseFloat(document.getElementById('crew_cost').value) || 0;
+            const airport = parseFloat(document.getElementById('airport_charges').value) || 0;
+            const catering = parseFloat(document.getElementById('catering_cost').value) || 0;
+            const maintenance = parseFloat(document.getElementById('maintenance_cost').value) || 0;
+            const other = parseFloat(document.getElementById('other_costs').value) || 0;
+            const total = fuel + crew + airport + catering + maintenance + other;
+            document.getElementById('totalCostDisplay').textContent = `৳${total.toLocaleString(undefined, {minimumFractionDigits: 2, maximumFractionDigits: 2})}`;
+        }
+
+        // Save costs to API
+        async function saveCosts() {
+            const form = document.getElementById('costForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+            const costData = {
+                fuel_cost: parseFloat(document.getElementById('fuel_cost').value) || 0,
+                crew_cost: parseFloat(document.getElementById('crew_cost').value) || 0,
+                airport_charges: parseFloat(document.getElementById('airport_charges').value) || 0,
+                catering_cost: parseFloat(document.getElementById('catering_cost').value) || 0,
+                maintenance_cost: parseFloat(document.getElementById('maintenance_cost').value) || 0,
+                other_costs: parseFloat(document.getElementById('other_costs').value) || 0,
+                notes: document.getElementById('notes').value || null
+            };
+            try {
+                showLoading();
+                const response = await fetch(`${API_URL}/flights/costs/${currentFlightId}`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(costData)
+                });
+                if (response.status === 401) {
+                    logout();
+                    return;
+                }
+                if (!response.ok) throw new Error('Failed to save costs');
+                alert('Costs saved successfully!');
+                closeModal();
+                loadFlights(); // Reload to update grid
+            } catch (error) {
+                console.error('Error saving costs:', error);
+                alert('Error saving costs: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Close modal and reset form
+        function closeModal() {
+            document.getElementById('costModal').style.display = 'none';
+            document.getElementById('costForm').reset();
+            document.getElementById('totalCostDisplay').textContent = '৳0.00';
+        }
+
+        // Show loading overlay
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        // Hide loading overlay
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        // Logout function
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        }
+
+        // Close modal on outside click
+        window.onclick = function(event) {
+            const modal = document.getElementById('costModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+
+        // Initialize
+        loadFlights();
+    </script>
+</body>
+</html>

@@ -5,9 +5,23 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Register - SkyLink Airlines</title>
     <link rel="stylesheet" href="/static/css/style.css">
+    <style>
+        .field-note {
+            font-size: 0.85rem;
+            color: #666;
+            margin-top: 0.3rem;
+            font-style: italic;
+        }
+        .required-indicator {
+            color: #dc3545;
+            font-weight: bold;
+        }
+        #staffIdGroup {
+            display: none;
+        }
+    </style>
 </head>
 <body>
-
     <nav class="navbar">
         <div class="container">
             <div class="nav-brand">SkyLink Airlines</div>
@@ -19,69 +33,85 @@
         </div>
     </nav>
 
-    <!-- register form -->
     <div class="container">
         <div class="form-container">
             <h2>✈️ Create Your Account</h2>
             
             <form id="registerForm">
                 <div class="form-group">
-                    <label for="fullName">Full Name *</label>
-                    <input 
-                        type="text" 
-                        id="fullName" 
-                        name="full_name" 
+                    <label for="fullName">Full Name <span class="required-indicator">*</span></label>
+                    <input
+                        type="text"
+                        id="fullName"
+                        name="full_name"
                         placeholder="Enter your full name"
                         required
                     >
                 </div>
-                
+
                 <div class="form-group">
-                    <label for="email">Email Address *</label>
-                    <input 
-                        type="email" 
-                        id="email" 
-                        name="email" 
+                    <label for="email">Email Address <span class="required-indicator">*</span></label>
+                    <input
+                        type="email"
+                        id="email"
+                        name="email"
                         placeholder="your.email@example.com"
                         required
                     >
                 </div>
-                
+
                 <div class="form-group">
                     <label for="phone">Phone Number (Optional)</label>
-                    <input 
-                        type="tel" 
-                        id="phone" 
-                        name="phone" 
+                    <input
+                        type="tel"
+                        id="phone"
+                        name="phone"
                         placeholder="+880 1234 567890"
                     >
                 </div>
-                
+
                 <div class="form-group">
-                    <label for="password">Password *</label>
-                    <input 
-                        type="password" 
-                        id="password" 
-                        name="password" 
+                    <label for="password">Password <span class="required-indicator">*</span></label>
+                    <input
+                        type="password"
+                        id="password"
+                        name="password"
                         placeholder="Minimum 6 characters"
                         required
                     >
                 </div>
-                
+
                 <div class="form-group">
-                    <label for="role">Account Type *</label>
+                    <label for="role">Account Type <span class="required-indicator">*</span></label>
                     <select id="role" name="role" required>
                         <option value="passenger">Passenger</option>
                         <option value="staff">Staff</option>
                         <option value="admin">Admin</option>
                     </select>
+                    <div class="field-note">
+                        ℹ️ Select "Passenger" for regular customers. Staff/Admin require an authorized ID.
+                    </div>
                 </div>
-                
+
+                <div class="form-group" id="staffIdGroup">
+                    <label for="staffId">Staff ID <span class="required-indicator">*</span></label>
+                    <input
+                        type="text"
+                        id="staffId"
+                        name="staff_id"
+                        placeholder="e.g., STAFF001 or ADMIN001"
+                    >
+                    <div class="field-note">
+                        🔐 Only authorized personnel with valid Staff ID can register as Staff/Admin.
+                        Contact your administrator to obtain a Staff ID.
+                    </div>
+                </div>
+
                 <button type="submit" class="btn btn-primary btn-block">
                     Create Account
                 </button>
             </form>
-            
+
             <p class="form-footer">
                 Already have an account? <a href="/login">Login here</a>
             </p>
@@ -94,6 +124,116 @@
         </div>
     </footer>
 
-    <script src="/static/js/register.js"></script>
+    <script>
+        // Show/hide Staff ID field based on role selection
+        document.getElementById('role').addEventListener('change', function() {
+            const staffIdGroup = document.getElementById('staffIdGroup');
+            const staffIdInput = document.getElementById('staffId');
+            
+            if (this.value === 'staff' || this.value === 'admin') {
+                staffIdGroup.style.display = 'block';
+                staffIdInput.required = true;
+            } else {
+                staffIdGroup.style.display = 'none';
+                staffIdInput.required = false;
+                staffIdInput.value = ''; // Clear the field
+            }
+        });
+
+        document.getElementById('registerForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+
+            // Get form data
+            const formData = {
+                email: document.getElementById('email').value.trim(),
+                full_name: document.getElementById('fullName').value.trim(),
+                password: document.getElementById('password').value,
+                phone: document.getElementById('phone').value.trim() || null,
+                role: document.getElementById('role').value
+            };
+
+            // Add staff_id if role is staff or admin
+            if (formData.role === 'staff' || formData.role === 'admin') {
+                const staffId = document.getElementById('staffId').value.trim();
+                
+                if (!staffId) {
+                    alert('❌ Staff ID is required for Staff and Admin accounts!');
+                    return;
+                }
+                
+                // Validate staff_id format
+                if (staffId.length < 5) {
+                    alert('❌ Staff ID must be at least 5 characters long!');
+                    return;
+                }
+                
+                formData.staff_id = staffId;
+            }
+
+            // Validate password length
+            if (formData.password.length < 6) {
+                alert('❌ Password must be at least 6 characters long!');
+                return;
+            }
+
+            // Validate full name
+            if (formData.full_name.length < 2) {
+                alert('❌ Please enter a valid full name!');
+                return;
+            }
+
+            // Disable submit button to prevent double submission
+            const submitBtn = e.target.querySelector('button[type="submit"]');
+            const originalText = submitBtn.textContent;
+            submitBtn.disabled = true;
+            submitBtn.textContent = 'Creating Account...';
+
+            try {
+                const response = await fetch('/api/register', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(formData)
+                });
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    // Success
+                    let message = '✅ Registration successful!';
+                    
+                    if (formData.role === 'staff' || formData.role === 'admin') {
+                        message += `\n\n🔐 Your ${formData.role} account has been created with Staff ID: ${formData.staff_id}`;
+                        message += '\n\nYou will need both your Staff ID and password to login.';
+                    } else {
+                        message += '\n\nPlease check your email to verify your account.';
+                    }
+                    
+                    alert(message);
+                    window.location.href = '/login';
+                } else {
+                    // Error from server
+                    let errorMessage = data.detail || 'Registration failed. Please try again.';
+                    
+                    // Handle specific errors
+                    if (errorMessage.includes('Staff ID')) {
+                        errorMessage = '❌ Invalid or unauthorized Staff ID!\n\nPlease contact your administrator to obtain a valid Staff ID.';
+                    } else if (errorMessage.includes('already registered') || errorMessage.includes('already exists')) {
+                        errorMessage = '❌ This email address is already registered!\n\nPlease use a different email or try logging in.';
+                    }
+                    
+                    alert(errorMessage);
+                    submitBtn.disabled = false;
+                    submitBtn.textContent = originalText;
+                }
+            } catch (error) {
+                // Network or other error
+                alert('❌ Network error: ' + error.message + '\n\nPlease check your connection and try again.');
+                submitBtn.disabled = false;
+                submitBtn.textContent = originalText;
+            }
+        });
+    </script>
 </body>
 </html>

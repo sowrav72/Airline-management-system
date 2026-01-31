@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Flights - SkyLink Airlines</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="container">
+            <div class="nav-brand">SkyLink Airlines</div>
+            <div class="nav-links">
+                <a href="/dashboard">Dashboard</a>
+                <a href="/flights">Search Flights</a>
+                <a href="/profile">Profile</a>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container">
+        <!-- Search Section -->
+        <div style="background: white; padding: 40px; border-radius: 15px; margin: 3rem 0; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+            <h2 style="text-align: center; color: #667eea; margin-bottom: 2rem;">🔍 Search Flights</h2>
+            
+            <form id="searchForm">
+                <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px;">
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; color: #666; font-weight: 600;">From:</label>
+                        <select id="origin" required style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
+                            <option value="">Select Origin</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; color: #666; font-weight: 600;">To:</label>
+                        <select id="destination" required style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
+                            <option value="">Select Destination</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label style="display: block; margin-bottom: 5px; color: #666; font-weight: 600;">Date:</label>
+                        <input type="date" id="departure_date" required style="width: 100%; padding: 12px; border: 2px solid #e0e0e0; border-radius: 8px; font-size: 14px;">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary btn-block" style="margin-top: 20px;">
+                    🔍 Search Flights
+                </button>
+            </form>
+        </div>
+
+        <!-- Loading -->
+        <div id="loading" style="display: none; text-align: center; color: white; padding: 40px; font-size: 18px;">
+            <div style="font-size: 48px; margin-bottom: 1rem;">⏳</div>
+            <p>Searching for flights...</p>
+        </div>
+
+        <!-- Results Section -->
+        <div id="resultsSection" style="display: none;">
+            <div style="background: white; padding: 20px; border-radius: 15px; margin-top: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                <h2 id="resultsTitle" style="color: #333;">Available Flights</h2>
+            </div>
+            <div id="flightsList"></div>
+        </div>
+    </div>
+
+    <footer>
+        <div class="container">
+            <p>&copy; 2024 SkyLink Airlines. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:8000/api';
+        
+        // ✅ FIXED: Use 'access_token' instead of 'token'
+        let token = localStorage.getItem('access_token');
+
+        if (!token) {
+            alert('⚠️ Please login first!');
+            window.location.href = '/login';
+        }
+
+        // Set minimum date to today
+        document.getElementById('departure_date').min = new Date().toISOString().split('T')[0];
+
+        // Load airports
+        async function loadAirports() {
+            try {
+                const response = await fetch(`${API_URL}/flights/airports`);
+                const airports = await response.json();
+                
+                console.log('✅ Loaded airports:', airports);
+                
+                const originSelect = document.getElementById('origin');
+                const destSelect = document.getElementById('destination');
+                
+                airports.forEach(airport => {
+                    const option = `<option value="${airport.code}">${airport.code} - ${airport.city}, ${airport.country}</option>`;
+                    originSelect.innerHTML += option;
+                    destSelect.innerHTML += option;
+                });
+            } catch (error) {
+                console.error('❌ Error loading airports:', error);
+                alert('Error loading airports. Please refresh the page.');
+            }
+        }
+
+        // Search flights
+        document.getElementById('searchForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const origin = document.getElementById('origin').value;
+            const destination = document.getElementById('destination').value;
+            const departureDate = document.getElementById('departure_date').value;
+            
+            if (origin === destination) {
+                alert('❌ Origin and destination cannot be the same!');
+                return;
+            }
+            
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('resultsSection').style.display = 'none';
+            
+            try {
+                const response = await fetch(
+                    `${API_URL}/flights/search?origin=${origin}&destination=${destination}&departure_date=${departureDate}`
+                );
+                
+                if (!response.ok) {
+                    throw new Error('Failed to search flights');
+                }
+                
+                const flights = await response.json();
+                console.log('✅ Found flights:', flights);
+                
+                displayFlights(flights);
+            } catch (error) {
+                console.error('❌ Error searching flights:', error);
+                alert('Error searching flights. Please try again.');
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        });
+
+        // Display flights
+        function displayFlights(flights) {
+            const resultsSection = document.getElementById('resultsSection');
+            const flightsList = document.getElementById('flightsList');
+            const resultsTitle = document.getElementById('resultsTitle');
+            
+            resultsSection.style.display = 'block';
+            
+            if (flights.length === 0) {
+                resultsTitle.textContent = 'No Flights Found';
+                flightsList.innerHTML = `
+                    <div style="background: white; padding: 60px; border-radius: 15px; text-align: center; margin-top: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1);">
+                        <div style="font-size: 64px; color: #ccc; margin-bottom: 20px;">✈️</div>
+                        <h3 style="color: #666;">No flights available</h3>
+                        <p style="color: #999;">Try searching with different dates or destinations</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            resultsTitle.textContent = `Found ${flights.length} Flight${flights.length > 1 ? 's' : ''}`;
+            
+            flightsList.innerHTML = flights.map(flight => {
+                const departureDate = new Date(flight.departure_datetime);
+                const arrivalDate = new Date(flight.arrival_datetime);
+                
+                return `
+                    <div style="background: white; padding: 25px; border-radius: 15px; margin-top: 20px; box-shadow: 0 4px 16px rgba(0,0,0,0.1);">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #f0f0f0;">
+                            <div style="font-size: 20px; font-weight: bold; color: #667eea;">${flight.flight_number}</div>
+                            <div style="padding: 6px 15px; border-radius: 20px; font-size: 12px; font-weight: 600; background: #e8f5e9; color: #2e7d32;">${flight.status}</div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr auto 1fr; gap: 20px; align-items: center; margin-bottom: 20px;">
+                            <div style="text-align: center;">
+                                <div style="font-size: 32px; font-weight: bold; color: #333;">${flight.origin.code}</div>
+                                <div style="font-size: 14px; color: #666; margin-top: 5px;">${flight.origin.city}</div>
+                                <div style="font-size: 18px; color: #667eea; font-weight: 600; margin-top: 5px;">
+                                    ${departureDate.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'})}
+                                </div>
+                            </div>
+                            
+                            <div style="text-align: center;">
+                                <div style="color: #667eea; font-size: 24px;">✈️</div>
+                                <div style="color: #666; font-size: 14px;">${flight.duration} min</div>
+                            </div>
+                            
+                            <div style="text-align: center;">
+                                <div style="font-size: 32px; font-weight: bold; color: #333;">${flight.destination.code}</div>
+                                <div style="font-size: 14px; color: #666; margin-top: 5px;">${flight.destination.city}</div>
+                                <div style="font-size: 18px; color: #667eea; font-weight: 600; margin-top: 5px;">
+                                    ${arrivalDate.toLocaleTimeString('en-US', {hour: '2-digit', minute: '2-digit'})}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="display: flex; justify-content: space-around; gap: 15px; margin-top: 20px; padding-top: 20px; border-top: 2px solid #f0f0f0;">
+                            <div style="flex: 1; text-align: center; padding: 15px; border: 2px solid #e0e0e0; border-radius: 10px;">
+                                <div style="font-size: 14px; color: #666; font-weight: 600; margin-bottom: 8px;">Economy</div>
+                                <div style="font-size: 24px; font-weight: bold; color: #667eea; margin-bottom: 5px;">৳${flight.prices.economy.toLocaleString()}</div>
+                                <div style="font-size: 12px; color: #666;">${flight.available_seats.economy} seats available</div>
+                            </div>
+                            
+                            <div style="flex: 1; text-align: center; padding: 15px; border: 2px solid #e0e0e0; border-radius: 10px;">
+                                <div style="font-size: 14px; color: #666; font-weight: 600; margin-bottom: 8px;">Business</div>
+                                <div style="font-size: 24px; font-weight: bold; color: #667eea; margin-bottom: 5px;">৳${flight.prices.business.toLocaleString()}</div>
+                                <div style="font-size: 12px; color: #666;">${flight.available_seats.business} seats available</div>
+                            </div>
+                            
+                            <div style="flex: 1; text-align: center; padding: 15px; border: 2px solid #e0e0e0; border-radius: 10px;">
+                                <div style="font-size: 14px; color: #666; font-weight: 600; margin-bottom: 8px;">First Class</div>
+                                <div style="font-size: 24px; font-weight: bold; color: #667eea; margin-bottom: 5px;">৳${flight.prices.first.toLocaleString()}</div>
+                                <div style="font-size: 12px; color: #666;">${flight.available_seats.first} seats available</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('🚀 Page loaded, loading airports...');
+            loadAirports();
+        });
+    </script>
+</body>
+</html>

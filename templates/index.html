@@ -3,18 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>SkyLink Airlines - User Management System</title>
+    <title>SkyLink Airlines - Flight Management System</title>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-
     <nav class="navbar">
         <div class="container">
             <div class="nav-brand">SkyLink Airlines</div>
-            <div class="nav-links">
+            <div class="nav-links" id="navLinks">
                 <a href="/">Home</a>
-                <a href="/login">Login</a>
-                <a href="/register">Get Started</a>
+                <a href="/flights">Search Flights</a>
+                <!-- Dynamic links will be added by JavaScript -->
             </div>
         </div>
     </nav>
@@ -22,11 +21,10 @@
     <div class="hero">
         <div class="container">
             <h1>Welcome to SkyLink Airlines</h1>
-            <p>User Management System - Module 2.1</p>
-            <p class="subtitle">Secure • Efficient • Reliable</p>
-            <div class="hero-buttons">
-                <a href="/register" class="btn btn-primary">Get Started</a>
-                <a href="/login" class="btn btn-secondary">Login</a>
+            <p>Complete Flight Management System</p>
+            <p class="subtitle">Module 2.1 & 2.2 - Fully Operational</p>
+            <div class="hero-buttons" id="heroButtons">
+                <!-- Buttons will be added by JavaScript based on login status -->
             </div>
         </div>
     </div>
@@ -38,32 +36,48 @@
                 <h3>Secure Authentication</h3>
                 <p>JWT-based authentication with bcrypt password hashing ensures maximum security for all user accounts</p>
             </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">✈️</div>
+                <h3>Flight Management</h3>
+                <p>Comprehensive flight scheduling, aircraft management, and route planning for efficient operations</p>
+            </div>
+
+            <div class="feature-card">
+                <div class="feature-icon">🔍</div>
+                <h3>Flight Search</h3>
+                <p>Advanced search with filters for date, origin, destination, and seat class with real-time availability</p>
+            </div>
+
             <div class="feature-card">
                 <div class="feature-icon">👥</div>
                 <h3>Role Management</h3>
-                <p>Comprehensive role-based access control supporting Passenger, Staff, and Admin with different permissions</p>
+                <p>Role-based access control supporting Passenger, Staff, and Admin with different permissions</p>
             </div>
+
             <div class="feature-card">
                 <div class="feature-icon">📊</div>
                 <h3>Activity Tracking</h3>
                 <p>Complete audit trail of all user activities with timestamps and detailed information logging</p>
             </div>
+
             <div class="feature-card">
-                <div class="feature-icon">👤</div>
-                <h3>Profile Management</h3>
-                <p>Easy-to-use interface for managing profile information, passwords, and account settings</p>
+                <div class="feature-icon">🛫</div>
+                <h3>Aircraft Fleet</h3>
+                <p>Manage your entire aircraft fleet with detailed specifications, maintenance tracking, and seat configurations</p>
             </div>
         </div>
     </div>
 
-    <!--information-->
     <div class="info-section">
         <div class="container">
             <h2>About This System</h2>
-            <p>This comprehensive User Management module is built as part of the SkyLink Airlines Management System. 
-            It demonstrates modern web development practices using FastAPI, PostgreSQL, and responsive frontend design 
-            with an aviation-themed interface that reflects the professional nature of airline operations.</p>
-            
+            <p>
+                SkyLink Airlines Management System is a comprehensive full-stack web application built for modern airline operations.
+                It demonstrates professional software engineering practices with FastAPI backend, PostgreSQL database, 
+                and responsive frontend design with aviation-themed interface.
+            </p>
+
             <div class="tech-stack">
                 <div class="tech-item">
                     <strong>Backend</strong>
@@ -82,6 +96,32 @@
                     JWT + Bcrypt
                 </div>
             </div>
+
+            <div style="margin-top: 3rem; text-align: center;">
+                <h3 style="color: #667eea; margin-bottom: 1rem;">✅ Completed Modules</h3>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin-top: 2rem;">
+                    <div style="background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                        <h4 style="color: #28a745; margin-bottom: 0.5rem;">Module 2.1: User Management ✓</h4>
+                        <ul style="text-align: left; color: #666; line-height: 1.8;">
+                            <li>User Registration & Authentication</li>
+                            <li>Email Verification</li>
+                            <li>Password Reset</li>
+                            <li>Profile Management</li>
+                            <li>Role-Based Access Control</li>
+                        </ul>
+                    </div>
+                    <div style="background: white; padding: 1.5rem; border-radius: 10px; box-shadow: 0 4px 15px rgba(0,0,0,0.1);">
+                        <h4 style="color: #28a745; margin-bottom: 0.5rem;">Module 2.2: Flight Management ✓</h4>
+                        <ul style="text-align: left; color: #666; line-height: 1.8;">
+                            <li>Aircraft Fleet Management</li>
+                            <li>Flight Scheduling</li>
+                            <li>Route Management</li>
+                            <li>Flight Search & Filters</li>
+                            <li>Seat Availability Tracking</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -91,5 +131,71 @@
             <p style="margin-top: 0.5rem; font-size: 0.9rem;">Built with ❤️ using FastAPI & PostgreSQL</p>
         </div>
     </footer>
+
+    <script>
+        // Check if user is logged in
+        const token = localStorage.getItem('access_token');
+        const navLinks = document.getElementById('navLinks');
+        const heroButtons = document.getElementById('heroButtons');
+
+        async function loadUserAndUpdateUI() {
+            if (token) {
+                try {
+                    const response = await fetch('/api/profile', {
+                        headers: {
+                            'Authorization': `Bearer ${token}`
+                        }
+                    });
+
+                    if (response.ok) {
+                        const user = await response.json();
+                        
+                        // Update navigation for logged-in user
+                        navLinks.innerHTML = `
+                            <a href="/">Home</a>
+                            <a href="/flights">Search Flights</a>
+                            ${user.role === 'staff' || user.role === 'admin' ? `
+                                <a href="/admin/aircraft">Aircraft</a>
+                                <a href="/admin/flights">Manage Flights</a>
+                            ` : ''}
+                            <a href="/dashboard">Dashboard</a>
+                            <a href="/profile">Profile</a>
+                        `;
+                        
+                        // Update hero buttons
+                        heroButtons.innerHTML = `
+                            <a href="/dashboard" class="btn btn-primary">Go to Dashboard</a>
+                            <a href="/flights" class="btn btn-secondary">Search Flights</a>
+                        `;
+                    } else {
+                        // Token invalid, show login/register
+                        showGuestUI();
+                    }
+                } catch (error) {
+                    console.error('Error loading user:', error);
+                    showGuestUI();
+                }
+            } else {
+                showGuestUI();
+            }
+        }
+
+        function showGuestUI() {
+            navLinks.innerHTML = `
+                <a href="/">Home</a>
+                <a href="/flights">Search Flights</a>
+                <a href="/login">Login</a>
+                <a href="/register">Register</a>
+            `;
+            
+            heroButtons.innerHTML = `
+                <a href="/register" class="btn btn-primary">Get Started</a>
+                <a href="/login" class="btn btn-secondary">Login</a>
+            `;
+        }
+
+        // Initialize
+        loadUserAndUpdateUI();
+    </script>
 </body>
 </html>

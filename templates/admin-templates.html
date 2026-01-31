@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flight Templates - SkyLink Airlines Admin</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+        .header {
+            background: white;
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+            margin-bottom: 30px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .logo {
+            font-size: 28px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .nav-buttons {
+            display: flex;
+            gap: 10px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.3s ease;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        .btn-warning {
+            background: #ffc107;
+            color: #333;
+        }
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        .btn-small {
+            padding: 6px 12px;
+            font-size: 12px;
+        }
+        .main-content {
+            background: white;
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.1);
+        }
+        .content-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 25px;
+        }
+        .content-header h2 {
+            color: #333;
+            font-size: 24px;
+        }
+        .templates-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+            gap: 25px;
+            margin-top: 25px;
+        }
+        .template-card {
+            background: white;
+            border: 2px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 20px;
+            transition: all 0.3s ease;
+        }
+        .template-card:hover {
+            border-color: #667eea;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.15);
+            transform: translateY(-3px);
+        }
+        .template-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: start;
+            margin-bottom: 15px;
+        }
+        .template-name {
+            font-size: 20px;
+            font-weight: bold;
+            color: #667eea;
+        }
+        .template-status {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        .status-active {
+            background: #e8f5e9;
+            color: #2e7d32;
+        }
+        .status-inactive {
+            background: #f5f5f5;
+            color: #757575;
+        }
+        .template-info {
+            margin-bottom: 15px;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        .info-label {
+            color: #666;
+            font-size: 13px;
+        }
+        .info-value {
+            color: #333;
+            font-weight: 600;
+            font-size: 14px;
+        }
+        .recurrence-badge {
+            display: inline-block;
+            padding: 4px 12px;
+            background: #e3f2fd;
+            color: #1565c0;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+            margin-top: 10px;
+        }
+        .template-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 15px;
+            padding-top: 15px;
+            border-top: 2px solid #f0f0f0;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.5);
+            animation: fadeIn 0.3s ease;
+        }
+        .modal-content {
+            background-color: white;
+            margin: 30px auto;
+            padding: 0;
+            border-radius: 15px;
+            width: 90%;
+            max-width: 800px;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            animation: slideIn 0.3s ease;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+        .modal-header {
+            padding: 25px 30px;
+            border-bottom: 2px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h3 {
+            color: #333;
+            font-size: 22px;
+        }
+        .close {
+            color: #aaa;
+            font-size: 32px;
+            font-weight: bold;
+            cursor: pointer;
+            line-height: 1;
+        }
+        .close:hover {
+            color: #000;
+        }
+        .modal-body {
+            padding: 30px;
+        }
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 20px;
+        }
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+        .form-group label {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        .form-group input,
+        .form-group select {
+            padding: 12px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            font-size: 14px;
+            transition: all 0.3s ease;
+        }
+        .form-group input:focus,
+        .form-group select:focus {
+            outline: none;
+            border-color: #667eea;
+        }
+        .modal-footer {
+            padding: 20px 30px;
+            border-top: 2px solid #f0f0f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+        }
+        .loading-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255,255,255,0.9);
+            z-index: 2000;
+            justify-content: center;
+            align-items: center;
+        }
+        .spinner {
+            border: 4px solid rgba(102, 126, 234, 0.2);
+            border-top: 4px solid #667eea;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #999;
+        }
+        .empty-state-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        .checkbox-group {
+            display: grid;
+            grid-template-columns: repeat(7, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+        .checkbox-item {
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+        .checkbox-item input {
+            width: auto;
+        }
+        .info-box {
+            background: #e3f2fd;
+            border-left: 4px solid #1565c0;
+            padding: 15px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+        .info-box h4 {
+            color: #1565c0;
+            margin-bottom: 10px;
+        }
+        .info-box p {
+            color: #666;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <div class="header">
+            <div class="logo">✈️ SkyLink Airlines - Flight Templates</div>
+            <div class="nav-buttons">
+                <button class="btn btn-secondary" onclick="window.location.href='/admin/flights'">Flights</button>
+                <button class="btn btn-secondary" onclick="window.location.href='/admin/aircraft'">Aircraft</button>
+                <button class="btn btn-secondary" onclick="window.location.href='/dashboard'">Dashboard</button>
+                <button class="btn btn-primary" onclick="logout()">Logout</button>
+            </div>
+        </div>
+        <!-- Main Content -->
+        <div class="main-content">
+            <div class="content-header">
+                <h2>🔄 Recurring Flight Templates</h2>
+                <button class="btn btn-success" onclick="openCreateModal()">+ Create Template</button>
+            </div>
+            <div class="info-box">
+                <h4>ℹ️ What are Flight Templates?</h4>
+                <p>Flight templates allow you to define recurring flight schedules. Once created, you can automatically generate multiple flights for days, weeks, or months ahead with a single click!</p>
+            </div>
+            <!-- Templates Grid -->
+            <div class="templates-grid" id="templatesGrid">
+                <div class="empty-state">
+                    <div class="empty-state-icon">⏳</div>
+                    <p>Loading templates...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    <!-- Create Template Modal -->
+    <div id="templateModal" class="modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Create Flight Template</h3>
+                <span class="close" onclick="closeModal()" aria-label="Close">&times;</span>
+            </div>
+            <div class="modal-body">
+                <form id="templateForm">
+                    <div class="form-grid">
+                        <div class="form-group full-width">
+                            <label for="template_name">Template Name *</label>
+                            <input type="text" id="template_name" required placeholder="e.g., Daily Dhaka-Dubai Flight">
+                        </div>
+                        <div class="form-group">
+                            <label for="flight_number_prefix">Flight Number Prefix *</label>
+                            <input type="text" id="flight_number_prefix" required placeholder="e.g., SL" maxlength="10">
+                        </div>
+                        <div class="form-group">
+                            <label for="route_id">Route *</label>
+                            <select id="route_id" required>
+                                <option value="">Select Route</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="aircraft_id">Aircraft *</label>
+                            <select id="aircraft_id" required>
+                                <option value="">Select Aircraft</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="gate">Gate</label>
+                            <input type="text" id="gate" placeholder="e.g., A12">
+                        </div>
+                        <div class="form-group">
+                            <label for="departure_time">Departure Time *</label>
+                            <input type="time" id="departure_time" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="duration_minutes">Duration (minutes) *</label>
+                            <input type="number" id="duration_minutes" required min="30" placeholder="e.g., 240">
+                        </div>
+                        <div class="form-group">
+                            <label for="recurrence_type">Recurrence Type *</label>
+                            <select id="recurrence_type" required onchange="toggleDaysOfWeek()">
+                                <option value="">Select Type</option>
+                                <option value="daily">Daily</option>
+                                <option value="weekly">Weekly (Specific Days)</option>
+                            </select>
+                        </div>
+                        <div class="form-group full-width" id="daysOfWeekGroup" style="display: none;">
+                            <label>Days of Week (for weekly recurrence)</label>
+                            <div class="checkbox-group">
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="day_1" value="1">
+                                    <label for="day_1">Mon</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="day_2" value="2">
+                                    <label for="day_2">Tue</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="day_3" value="3">
+                                    <label for="day_3">Wed</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="day_4" value="4">
+                                    <label for="day_4">Thu</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="day_5" value="5">
+                                    <label for="day_5">Fri</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="day_6" value="6">
+                                    <label for="day_6">Sat</label>
+                                </div>
+                                <div class="checkbox-item">
+                                    <input type="checkbox" id="day_7" value="7">
+                                    <label for="day_7">Sun</label>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label for="start_date">Start Date *</label>
+                            <input type="date" id="start_date" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="end_date">End Date (Optional)</label>
+                            <input type="date" id="end_date">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+                <button class="btn btn-success" onclick="saveTemplate()">Create Template</button>
+            </div>
+        </div>
+    </div>
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay" aria-label="Loading">
+        <div class="spinner" role="progressbar"></div>
+    </div>
+    <script>
+        const API_URL = 'http://127.0.0.1:8000/api';
+        let token = localStorage.getItem('token');
+        if (!token) {
+            window.location.href = '/login';
+        }
+
+        // Set minimum date to today for start and end dates
+        const today = new Date().toISOString().split('T')[0];
+        document.getElementById('start_date').min = today;
+        document.getElementById('end_date').min = today;
+
+        // Toggle days of week based on recurrence type
+        function toggleDaysOfWeek() {
+            const recurrenceType = document.getElementById('recurrence_type').value;
+            const daysGroup = document.getElementById('daysOfWeekGroup');
+            daysGroup.style.display = recurrenceType === 'weekly' ? 'block' : 'none';
+        }
+
+        // Load templates
+        async function loadTemplates() {
+            showLoading();
+            try {
+                const response = await fetch(`${API_URL}/flights/templates`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (response.status === 401) {
+                    logout();
+                    return;
+                }
+                if (!response.ok) throw new Error('Failed to load templates');
+                const templates = await response.json();
+                displayTemplates(templates);
+            } catch (error) {
+                console.error('Error loading templates:', error);
+                document.getElementById('templatesGrid').innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">❌</div>
+                        <p>Error loading templates: ${error.message}</p>
+                    </div>
+                `;
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Display templates in grid
+        function displayTemplates(templates) {
+            const grid = document.getElementById('templatesGrid');
+            if (templates.length === 0) {
+                grid.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">🔄</div>
+                        <p>No templates found. Create your first recurring flight template!</p>
+                    </div>
+                `;
+                return;
+            }
+            grid.innerHTML = templates.map(t => {
+                const daysOfWeek = t.days_of_week ?
+                    t.days_of_week.split(',').map(d => ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'][parseInt(d)-1]).join(', ') :
+                    'Every day';
+                return `
+                    <div class="template-card">
+                        <div class="template-header">
+                            <div class="template-name">${t.template_name}</div>
+                            <div class="template-status status-${t.is_active ? 'active' : 'inactive'}">
+                                ${t.is_active ? 'Active' : 'Inactive'}
+                            </div>
+                        </div>
+                        <div class="template-info">
+                            <div class="info-row">
+                                <span class="info-label">Flight Prefix</span>
+                                <span class="info-value">${t.flight_number_prefix}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Route</span>
+                                <span class="info-value">Route #${t.route_id}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Aircraft</span>
+                                <span class="info-value">Aircraft #${t.aircraft_id}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Departure Time</span>
+                                <span class="info-value">${t.departure_time}</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Duration</span>
+                                <span class="info-value">${t.duration_minutes} min</span>
+                            </div>
+                            <div class="info-row">
+                                <span class="info-label">Period</span>
+                                <span class="info-value">${t.start_date} ${t.end_date ? '→ ' + t.end_date : '(ongoing)'}</span>
+                            </div>
+                        </div>
+                        <div class="recurrence-badge">
+                            ${t.recurrence_type === 'daily' ? '📅 Daily' : `📅 Weekly: ${daysOfWeek}`}
+                        </div>
+                        <div class="template-actions">
+                            <button class="btn btn-success btn-small" style="flex: 1;" onclick="generateFlights(${t.id})">
+                                ⚡ Generate Flights
+                            </button>
+                            <button class="btn btn-danger btn-small" onclick="deleteTemplate(${t.id})">
+                                🗑️ Delete
+                            </button>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Load routes
+        async function loadRoutes() {
+            try {
+                const response = await fetch(`${API_URL}/flights/routes`);
+                if (response.status === 401) {
+                    logout();
+                    return;
+                }
+                const routes = await response.json();
+                const select = document.getElementById('route_id');
+                select.innerHTML = '<option value="">Select Route</option>' +
+                    routes.map(r =>
+                        `<option value="${r.id}">Route #${r.id}: Airport ${r.origin_airport_id} → ${r.destination_airport_id}</option>`
+                    ).join('');
+            } catch (error) {
+                console.error('Error loading routes:', error);
+            }
+        }
+
+        // Load aircraft
+        async function loadAircraft() {
+            try {
+                const response = await fetch(`${API_URL}/flights/aircraft`);
+                if (response.status === 401) {
+                    logout();
+                    return;
+                }
+                const aircraft = await response.json();
+                const select = document.getElementById('aircraft_id');
+                select.innerHTML = '<option value="">Select Aircraft</option>' +
+                    aircraft.filter(a => a.status === 'active').map(a =>
+                        `<option value="${a.id}">${a.aircraft_number} - ${a.model}</option>`
+                    ).join('');
+            } catch (error) {
+                console.error('Error loading aircraft:', error);
+            }
+        }
+
+        // Open create modal
+        function openCreateModal() {
+            document.getElementById('templateForm').reset();
+            document.getElementById('daysOfWeekGroup').style.display = 'none';
+            document.getElementById('templateModal').style.display = 'block';
+        }
+
+        // Save template
+        async function saveTemplate() {
+            const form = document.getElementById('templateForm');
+            if (!form.checkValidity()) {
+                form.reportValidity();
+                return;
+            }
+
+            const startDate = document.getElementById('start_date').value;
+            const endDate = document.getElementById('end_date').value;
+            if (endDate && new Date(endDate) < new Date(startDate)) {
+                alert('End date must be after start date');
+                return;
+            }
+
+            const recurrenceType = document.getElementById('recurrence_type').value;
+            let daysOfWeek = null;
+            if (recurrenceType === 'weekly') {
+                const selectedDays = [];
+                for (let i = 1; i <= 7; i++) {
+                    if (document.getElementById(`day_${i}`).checked) {
+                        selectedDays.push(i);
+                    }
+                }
+                if (selectedDays.length === 0) {
+                    alert('Please select at least one day for weekly recurrence');
+                    return;
+                }
+                daysOfWeek = selectedDays.join(',');
+            }
+
+            const templateData = {
+                template_name: document.getElementById('template_name').value,
+                flight_number_prefix: document.getElementById('flight_number_prefix').value,
+                route_id: parseInt(document.getElementById('route_id').value),
+                aircraft_id: parseInt(document.getElementById('aircraft_id').value),
+                recurrence_type: recurrenceType,
+                days_of_week: daysOfWeek,
+                departure_time: document.getElementById('departure_time').value,
+                duration_minutes: parseInt(document.getElementById('duration_minutes').value),
+                start_date: startDate,
+                end_date: endDate || null,
+                gate: document.getElementById('gate').value || null
+            };
+
+            try {
+                showLoading();
+                const response = await fetch(`${API_URL}/flights/templates`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${token}`
+                    },
+                    body: JSON.stringify(templateData)
+                });
+                if (response.status === 401) {
+                    logout();
+                    return;
+                }
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.detail || 'Failed to create template');
+                }
+                alert('Template created successfully!');
+                closeModal();
+                loadTemplates();
+            } catch (error) {
+                console.error('Error creating template:', error);
+                alert(`Error: ${error.message}`);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Generate flights from template
+        async function generateFlights(templateId) {
+            const days = prompt('Generate flights for how many days ahead?', '30');
+            if (!days) return;
+            const daysAhead = parseInt(days);
+            if (isNaN(daysAhead) || daysAhead <= 0) {
+                alert('Please enter a valid number of days');
+                return;
+            }
+            try {
+                showLoading();
+                const response = await fetch(`${API_URL}/flights/templates/${templateId}/generate?days_ahead=${daysAhead}`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (response.status === 401) {
+                    logout();
+                    return;
+                }
+                if (!response.ok) throw new Error('Failed to generate flights');
+                const result = await response.json();
+                alert(`Success! Generated ${result.flights.length} flights for the next ${daysAhead} days.`);
+            } catch (error) {
+                console.error('Error generating flights:', error);
+                alert('Error generating flights: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Delete template
+        async function deleteTemplate(templateId) {
+            if (!confirm('Are you sure you want to delete this template? This will NOT delete flights already generated.')) {
+                return;
+            }
+            try {
+                showLoading();
+                const response = await fetch(`${API_URL}/flights/templates/${templateId}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                });
+                if (response.status === 401) {
+                    logout();
+                    return;
+                }
+                if (!response.ok) throw new Error('Failed to delete template');
+                alert('Template deleted successfully!');
+                loadTemplates();
+            } catch (error) {
+                console.error('Error deleting template:', error);
+                alert('Error deleting template: ' + error.message);
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Close modal and reset form
+        function closeModal() {
+            document.getElementById('templateModal').style.display = 'none';
+            document.getElementById('templateForm').reset();
+        }
+
+        // Show loading overlay
+        function showLoading() {
+            document.getElementById('loadingOverlay').style.display = 'flex';
+        }
+
+        // Hide loading overlay
+        function hideLoading() {
+            document.getElementById('loadingOverlay').style.display = 'none';
+        }
+
+        // Logout function
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        }
+
+        // Close modal on outside click
+        window.onclick = function(event) {
+            const modal = document.getElementById('templateModal');
+            if (event.target == modal) {
+                closeModal();
+            }
+        }
+
+        // Initialize
+        async function init() {
+            await Promise.all([loadRoutes(), loadAircraft()]);
+            loadTemplates();
+        }
+        init();
+    </script>
+</body>
+</html>
