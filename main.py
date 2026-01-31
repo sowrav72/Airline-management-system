@@ -1,3 +1,4 @@
+from models import StaffIdLog
 from fastapi import FastAPI, Depends, HTTPException, status, File, UploadFile
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from fastapi.staticfiles import StaticFiles
@@ -22,14 +23,17 @@ from schemas import (
 )
 from email_service import send_verification_email, send_password_reset_email
 
+# Import flight routes
+from flight_routes import router as flight_router
+
 # Create tables automatically
 Base.metadata.create_all(bind=engine)
 
 # Initialize FastAPI
 app = FastAPI(
-    title="SkyLink Airlines - User Management System",
-    description="Complete user management module with authentication",
-    version="2.0.0"
+    title="SkyLink Airlines - Complete Management System",
+    description="User & Flight Management Module",
+    version="2.1.0"
 )
 
 # CORS middleware
@@ -43,6 +47,9 @@ app.add_middleware(
 
 # Mount static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Include flight management routes
+app.include_router(flight_router)
 
 # Create uploads directory if not exists
 UPLOAD_DIR = Path("static/uploads/profiles")
@@ -108,7 +115,10 @@ def log_activity(db: Session, user_id: int, action: str, details: str = None):
     db.add(activity)
     db.commit()
 
-# HTML Routes
+# ========================================
+# HTML ROUTES (Serve HTML Pages)
+# ========================================
+
 @app.get("/", response_class=HTMLResponse)
 async def read_root():
     with open("templates/index.html", "r", encoding="utf-8") as f:
@@ -116,11 +126,13 @@ async def read_root():
 
 @app.get("/register", response_class=HTMLResponse)
 async def register_page():
+    """Serve the registration HTML page"""
     with open("templates/register.html", "r", encoding="utf-8") as f:
         return f.read()
 
 @app.get("/login", response_class=HTMLResponse)
 async def login_page():
+    """Serve the login HTML page"""
     with open("templates/login.html", "r", encoding="utf-8") as f:
         return f.read()
 
@@ -149,13 +161,63 @@ async def reset_password_page():
     with open("templates/reset-password.html", "r", encoding="utf-8") as f:
         return f.read()
 
-# API Endpoints
+# Flight Management HTML Routes
+@app.get("/flights", response_class=HTMLResponse)
+async def flights_page():
+    with open("templates/flights.html", "r", encoding="utf-8") as f:
+        return f.read()
+
+@app.get("/admin/flights", response_class=HTMLResponse)
+async def admin_flights_page():
+    with open("templates/admin-flights.html", "r", encoding="utf-8") as f:
+        return f.read()
+
+@app.get("/admin/aircraft", response_class=HTMLResponse)
+async def admin_aircraft_page():
+    with open("templates/admin-aircraft.html", "r", encoding="utf-8") as f:
+        return f.read()
+
+@app.get("/admin/costs", response_class=HTMLResponse)
+async def admin_costs_page():
+    with open("templates/admin-costs.html", "r", encoding="utf-8") as f:
+        return f.read()
+
+@app.get("/admin/templates", response_class=HTMLResponse)
+async def admin_templates_page():
+    with open("templates/admin-templates.html", "r", encoding="utf-8") as f:
+        return f.read()
+
+@app.get("/admin/flight-history", response_class=HTMLResponse)
+async def admin_flight_history_page():
+    with open("templates/admin-flight-history.html", "r", encoding="utf-8") as f:
+        return f.read()
+
+# ========================================
+# API ENDPOINTS (Return JSON)
+# ========================================
+
+# AUTHENTICATION ENDPOINTS
+
 @app.post("/api/register")
 async def register(user: UserCreate, db: Session = Depends(get_db)):
+    """Register a new user with staff_id support"""
     # Check if user exists
     db_user = db.query(User).filter(User.email == user.email).first()
     if db_user:
         raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # Check if staff_id already exists (for staff/admin)
+    if user.staff_id:
+        existing_staff_id = db.query(User).filter(User.staff_id == user.staff_id).first()
+        if existing_staff_id:
+            raise HTTPException(status_code=400, detail="Staff ID already in use")
+    
+    # Validate role and staff_id combination
+    if user.role in ['staff', 'admin'] and not user.staff_id:
+        raise HTTPException(status_code=400, detail="Staff ID is required for staff and admin roles")
+    
+    if user.role == 'passenger' and user.staff_id:
+        raise HTTPException(status_code=400, detail="Passengers cannot have a staff ID")
     
     # Create new user
     hashed_password = get_password_hash(user.password)
@@ -171,6 +233,8 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
         hashed_password=hashed_password,
         phone=user.phone,
         role=user_role,
+        staff_id=user.staff_id,
+        staff_id_active=True if user.staff_id else None,
         is_active=True,
         is_verified=False,
         verification_token=verification_token,
@@ -182,11 +246,23 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
     
+    # Log staff ID creation
+    if user.staff_id:
+        staff_log = StaffIdLog(
+            staff_id=user.staff_id,
+            action='created',
+            performed_by=None,
+            reason=f"New {user_role} account registered",
+            timestamp=datetime.utcnow()
+        )
+        db.add(staff_log)
+        db.commit()
+    
     # Send verification email
     await send_verification_email(user.email, verification_token, user.full_name)
     
     # Log activity
-    log_activity(db, new_user.id, "USER_REGISTERED", f"New user registered: {user.email}")
+    log_activity(db, new_user.id, "USER_REGISTERED", f"New {user_role} registered: {user.email}")
     
     return {
         "message": "Registration successful! Please check your email to verify your account.",
@@ -194,7 +270,102 @@ async def register(user: UserCreate, db: Session = Depends(get_db)):
             "id": new_user.id,
             "email": new_user.email,
             "full_name": new_user.full_name,
-            "role": new_user.role
+            "role": new_user.role,
+            "staff_id": new_user.staff_id
+        }
+    }
+
+@app.post("/api/login")
+async def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
+    """Login with staff_id validation for staff/admin"""
+    # Find user by email
+    user = db.query(User).filter(User.email == user_credentials.email).first()
+    
+    # Check if user exists
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password"
+        )
+    
+    # Check password
+    if not verify_password(user_credentials.password, user.hashed_password):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Incorrect email or password"
+        )
+    
+    # Check if user is staff/admin and requires staff_id
+    if user.role in ['staff', 'admin']:
+        # Staff/Admin must provide staff_id
+        if not user_credentials.staff_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Staff ID is required for staff and admin login"
+            )
+        
+        # Verify staff_id matches
+        if user.staff_id != user_credentials.staff_id:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid Staff ID"
+            )
+        
+        # Check if staff_id is active
+        if not user.staff_id_active:
+            # Log deactivated login attempt
+            log_activity(
+                db, 
+                user.id, 
+                "LOGIN_FAILED_DEACTIVATED", 
+                f"Attempted login with deactivated Staff ID: {user.staff_id}"
+            )
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Your staff account has been deactivated. Please contact your administrator."
+            )
+    
+    # Passenger should NOT provide staff_id
+    if user.role == 'passenger' and user_credentials.staff_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Passenger login does not require Staff ID"
+        )
+    
+    # Check if account is active
+    if not user.is_active:
+        raise HTTPException(status_code=400, detail="User account is inactive")
+    
+    # Allow login even if not verified, but show warning
+    if not user.is_verified:
+        print(f"⚠️ User {user.email} logged in without email verification")
+    
+    # Update last login
+    user.last_login = datetime.utcnow()
+    db.commit()
+    
+    # Create access token
+    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
+    access_token = create_access_token(
+        data={"sub": user.email}, expires_delta=access_token_expires
+    )
+    
+    # Log activity
+    login_details = f"User logged in: {user.email}"
+    if user.role in ['staff', 'admin']:
+        login_details += f" (Staff ID: {user.staff_id})"
+    log_activity(db, user.id, "USER_LOGIN", login_details)
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "id": user.id,
+            "email": user.email,
+            "full_name": user.full_name,
+            "role": user.role,
+            "staff_id": user.staff_id if user.role in ['staff', 'admin'] else None,
+            "is_verified": user.is_verified
         }
     }
 
@@ -249,48 +420,6 @@ async def resend_verification(request: dict, db: Session = Depends(get_db)):
     
     return {"message": "Verification email sent successfully"}
 
-@app.post("/api/login")
-async def login(user_credentials: UserLogin, db: Session = Depends(get_db)):
-    user = db.query(User).filter(User.email == user_credentials.email).first()
-    
-    if not user or not verify_password(user_credentials.password, user.hashed_password):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Incorrect email or password"
-        )
-    
-    if not user.is_active:
-        raise HTTPException(status_code=400, detail="User account is inactive")
-    
-    # Allow login even if not verified, but show warning
-    if not user.is_verified:
-        print(f"⚠️  User {user.email} logged in without email verification")
-    
-    # Update last login
-    user.last_login = datetime.utcnow()
-    db.commit()
-    
-    # Create access token
-    access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
-    access_token = create_access_token(
-        data={"sub": user.email}, expires_delta=access_token_expires
-    )
-    
-    # Log activity
-    log_activity(db, user.id, "USER_LOGIN", f"User logged in: {user.email}")
-    
-    return {
-        "access_token": access_token,
-        "token_type": "bearer",
-        "user": {
-            "id": user.id,
-            "email": user.email,
-            "full_name": user.full_name,
-            "role": user.role,
-            "is_verified": user.is_verified
-        }
-    }
-
 @app.post("/api/forgot-password")
 async def forgot_password(request: PasswordReset, db: Session = Depends(get_db)):
     user = db.query(User).filter(User.email == request.email).first()
@@ -336,6 +465,15 @@ async def reset_password(request: PasswordResetConfirm, db: Session = Depends(ge
     
     return {"message": "Password reset successfully! You can now login with your new password."}
 
+@app.post("/api/logout")
+async def logout(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    # Log activity
+    log_activity(db, current_user.id, "USER_LOGOUT", "User logged out")
+    
+    return {"message": "Logged out successfully"}
+
+# PROFILE MANAGEMENT ENDPOINTS
+
 @app.get("/api/profile")
 async def get_profile(current_user: User = Depends(get_current_user)):
     return {
@@ -344,6 +482,7 @@ async def get_profile(current_user: User = Depends(get_current_user)):
         "full_name": current_user.full_name,
         "role": current_user.role,
         "phone": current_user.phone,
+        "staff_id": current_user.staff_id if current_user.role in ['staff', 'admin'] else None,
         "is_verified": current_user.is_verified,
         "profile_photo": current_user.profile_photo,
         "created_at": current_user.created_at.isoformat() if current_user.created_at else None,
@@ -450,14 +589,182 @@ async def get_activity_logs(current_user: User = Depends(get_current_user), db: 
         for log in logs
     ]
 
-@app.post("/api/logout")
-async def logout(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    # Log activity
-    log_activity(db, current_user.id, "USER_LOGOUT", "User logged out")
-    
-    return {"message": "Logged out successfully"}
+# STAFF ID MANAGEMENT ENDPOINTS (ADMIN ONLY)
 
-# Admin endpoints
+@app.post("/api/admin/deactivate-staff")
+async def deactivate_staff_id(
+    request: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Deactivate a staff member (Admin only)"""
+    
+    # Only admins can deactivate staff
+    if current_user.role != 'admin':
+        raise HTTPException(status_code=403, detail="Only admins can deactivate staff accounts")
+    
+    staff_id = request.get('staff_id')
+    reason = request.get('reason', 'No reason provided')
+    
+    if not staff_id:
+        raise HTTPException(status_code=400, detail="Staff ID is required")
+    
+    # Find user with this staff_id
+    staff_user = db.query(User).filter(User.staff_id == staff_id).first()
+    
+    if not staff_user:
+        raise HTTPException(status_code=404, detail="Staff member not found")
+    
+    # Cannot deactivate yourself
+    if staff_user.id == current_user.id:
+        raise HTTPException(status_code=400, detail="You cannot deactivate your own account")
+    
+    # Deactivate the staff ID
+    staff_user.staff_id_active = False
+    staff_user.deactivated_at = datetime.utcnow()
+    staff_user.deactivated_by = current_user.id
+    staff_user.is_active = False  # Also deactivate the account
+    
+    db.commit()
+    
+    # Log the deactivation
+    staff_log = StaffIdLog(
+        staff_id=staff_id,
+        action='deactivated',
+        performed_by=current_user.id,
+        reason=reason,
+        timestamp=datetime.utcnow()
+    )
+    db.add(staff_log)
+    db.commit()
+    
+    # Log activity
+    log_activity(
+        db,
+        current_user.id,
+        "STAFF_DEACTIVATED",
+        f"Deactivated staff member {staff_user.full_name} (Staff ID: {staff_id}). Reason: {reason}"
+    )
+    
+    return {
+        "message": f"Staff member {staff_user.full_name} has been deactivated",
+        "staff_id": staff_id,
+        "deactivated_at": staff_user.deactivated_at.isoformat()
+    }
+
+@app.post("/api/admin/activate-staff")
+async def activate_staff_id(
+    request: dict,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Reactivate a staff member (Admin only)"""
+    
+    # Only admins can activate staff
+    if current_user.role != 'admin':
+        raise HTTPException(status_code=403, detail="Only admins can activate staff accounts")
+    
+    staff_id = request.get('staff_id')
+    reason = request.get('reason', 'Reactivated by admin')
+    
+    if not staff_id:
+        raise HTTPException(status_code=400, detail="Staff ID is required")
+    
+    # Find user with this staff_id
+    staff_user = db.query(User).filter(User.staff_id == staff_id).first()
+    
+    if not staff_user:
+        raise HTTPException(status_code=404, detail="Staff member not found")
+    
+    # Activate the staff ID
+    staff_user.staff_id_active = True
+    staff_user.deactivated_at = None
+    staff_user.deactivated_by = None
+    staff_user.is_active = True
+    
+    db.commit()
+    
+    # Log the activation
+    staff_log = StaffIdLog(
+        staff_id=staff_id,
+        action='activated',
+        performed_by=current_user.id,
+        reason=reason,
+        timestamp=datetime.utcnow()
+    )
+    db.add(staff_log)
+    db.commit()
+    
+    # Log activity
+    log_activity(
+        db,
+        current_user.id,
+        "STAFF_ACTIVATED",
+        f"Activated staff member {staff_user.full_name} (Staff ID: {staff_id}). Reason: {reason}"
+    )
+    
+    return {
+        "message": f"Staff member {staff_user.full_name} has been reactivated",
+        "staff_id": staff_id
+    }
+
+@app.get("/api/admin/staff-list")
+async def get_staff_list(
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get list of all staff/admin accounts (Admin only)"""
+    
+    if current_user.role != 'admin':
+        raise HTTPException(status_code=403, detail="Only admins can view staff list")
+    
+    staff_members = db.query(User).filter(
+        User.role.in_(['staff', 'admin'])
+    ).all()
+    
+    return [
+        {
+            "id": user.id,
+            "full_name": user.full_name,
+            "email": user.email,
+            "role": user.role,
+            "staff_id": user.staff_id,
+            "staff_id_active": user.staff_id_active,
+            "is_active": user.is_active,
+            "created_at": user.created_at.isoformat() if user.created_at else None,
+            "deactivated_at": user.deactivated_at.isoformat() if user.deactivated_at else None
+        }
+        for user in staff_members
+    ]
+
+@app.get("/api/admin/staff-logs/{staff_id}")
+async def get_staff_logs(
+    staff_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """Get activity logs for a specific staff ID (Admin only)"""
+    
+    if current_user.role != 'admin':
+        raise HTTPException(status_code=403, detail="Only admins can view staff logs")
+    
+    logs = db.query(StaffIdLog).filter(
+        StaffIdLog.staff_id == staff_id
+    ).order_by(StaffIdLog.timestamp.desc()).all()
+    
+    return [
+        {
+            "id": log.id,
+            "action": log.action,
+            "performed_by": log.performed_by,
+            "reason": log.reason,
+            "timestamp": log.timestamp.isoformat()
+        }
+        for log in logs
+    ]
+
+# ADMIN ENDPOINTS
+
 @app.get("/api/admin/users")
 async def get_all_users(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.role != "admin":
@@ -470,6 +777,7 @@ async def get_all_users(current_user: User = Depends(get_current_user), db: Sess
             "email": user.email,
             "full_name": user.full_name,
             "role": user.role,
+            "staff_id": user.staff_id if user.role in ['staff', 'admin'] else None,
             "is_active": user.is_active,
             "is_verified": user.is_verified,
             "created_at": user.created_at.isoformat() if user.created_at else None
@@ -477,25 +785,29 @@ async def get_all_users(current_user: User = Depends(get_current_user), db: Sess
         for user in users
     ]
 
-# Health check endpoint
+# HEALTH CHECK ENDPOINT
+
 @app.get("/api/health")
 async def health_check():
     return {
         "status": "healthy", 
         "message": "SkyLink Airlines API is running",
         "database": "PostgreSQL",
-        "version": "2.0.0"
+        "version": "2.1.0",
+        "modules": ["User Management", "Flight Management", "Staff ID Management"]
     }
 
 if __name__ == "__main__":
     import uvicorn
     print("✈️  " + "="*50)
-    print("🚀 SkyLink Airlines User Management System v2.0")
+    print("🚀 SkyLink Airlines Management System v2.1")
     print("="*54)
     print("📍 Server: http://127.0.0.1:8000")
     print("📚 API Docs: http://127.0.0.1:8000/docs")
     print("🗄️  Database: PostgreSQL (Port 1234)")
-    print("✨ New Features: Email Verification, Password Reset, Photo Upload")
+    print("✨ Module 2.1: User Management ✓")
+    print("✨ Module 2.2: Flight Management ✓")
+    print("✨ Module 2.3: Staff ID Management ✓")
     print("🔧 Press CTRL+C to stop")
     print("="*54)
     uvicorn.run(app, host="127.0.0.1", port=8000)
