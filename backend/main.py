@@ -56,7 +56,7 @@ UPLOAD_DIR = Path("static/uploads/profiles")
 UPLOAD_DIR.mkdir(parents=True, exist_ok=True)
 
 # Security configuration
-SECRET_KEY = "skylink-airlines-secret-key-2024-postgresql-change-in-production"
+SECRET_KEY = os.getenv("SECRET_KEY", "skylink-airlines-secret-key-2024-change-in-production")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 30
 
